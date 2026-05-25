@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TokenSlayer — Convierte. Ahorra. Úsalo bien.</title>
+<meta name="description" content="Convierte tus documentos a Markdown y recupera hasta un 60% de tokens con Claude. Gratis."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;1,400&family=DM+Mono:wght@400;500&family=Lato:wght@300;400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#141614;--bg-2:#1c1f1c;--bg-3:#222622;--bg-4:#2a2f2a;
+  --green:#00e676;--green-dim:#00c853;--green-dark:#003d1a;--green-mid:#00512a;
+  --amber:#ffab40;--amber-dark:#3d2600;--amber-mid:#5a3a00;
+  --cream:#e8e6df;--cream-dim:#a8a89e;--cream-faint:#4a4d48;
+  --red:#ff5252;--white:#f0ede6;
+  --radius-sm:8px;--radius-md:12px;--radius-lg:18px;
+  --font-display:'Playfair Display',Georgia,serif;
+  --font-body:'Lato',system-ui,sans-serif;
+  --font-mono:'DM Mono',monospace;
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);font-weight:300;background:var(--bg);color:var(--cream);
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  padding:3rem 1rem 2rem;line-height:1.6;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(var(--bg-2) 1px,transparent 1px),linear-gradient(90deg,var(--bg-2) 1px,transparent 1px);
+  background-size:40px 40px;opacity:0.35;pointer-events:none;z-index:0;
+}
+.page{width:100%;max-width:620px;position:relative;z-index:1;animation:fadeUp 0.5s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+/* NAV */
+.nav{display:flex;gap:6px;justify-content:center;margin-bottom:2.5rem;flex-wrap:wrap}
+.nav a{font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--cream-faint);text-decoration:none;padding:5px 14px;border:0.5px solid var(--cream-faint);border-radius:99px;transition:all 0.15s}
+.nav a:hover{color:var(--green);border-color:var(--green-mid)}
+
+/* ===== HERO ===== */
+.hero{text-align:center;margin-bottom:3rem;padding-bottom:2.5rem;border-bottom:0.5px solid var(--cream-faint)}
+.hero-badge{display:inline-block;font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--green);background:var(--green-dark);border:0.5px solid var(--green-mid);border-radius:99px;padding:4px 14px;margin-bottom:1.25rem}
+.hero-title{font-family:var(--font-display);font-size:clamp(44px,10vw,62px);font-weight:500;letter-spacing:-2px;line-height:1;color:var(--white)}
+.hero-title em{font-style:italic;color:var(--green)}
+.hero-hook{font-size:15px;color:var(--cream-dim);margin-top:1rem;line-height:1.7;max-width:480px;margin-left:auto;margin-right:auto}
+.hero-hook strong{color:var(--white)}
+.hero-impact{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+  margin-top:1.5rem;margin-bottom:1.5rem;
+}
+.hi-card{background:var(--bg-2);border:0.5px solid var(--cream-faint);border-radius:var(--radius-md);padding:14px 10px;text-align:center}
+.hi-card .hi-val{font-family:var(--font-mono);font-size:20px;font-weight:500;color:var(--green);line-height:1;margin-bottom:4px}
+.hi-card .hi-label{font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--cream-faint);line-height:1.4}
+.hero-cta{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:12px 28px;font-family:var(--font-mono);font-size:12px;letter-spacing:0.05em;
+  background:var(--green);color:var(--bg);border:none;border-radius:var(--radius-sm);
+  cursor:pointer;text-decoration:none;transition:background 0.15s;font-weight:500;
+}
+.hero-cta:hover{background:var(--green-dim)}
+.hero-cta i{font-size:15px}
+.hero-by{font-family:var(--font-display);font-style:italic;font-size:13px;color:var(--cream-faint);margin-top:1rem}
+.hero-by strong{font-style:normal;font-weight:500;color:var(--green-dim)}
+
+/* SECTION */
+.section{margin-bottom:3rem;padding-bottom:3rem;border-bottom:0.5px solid var(--cream-faint)}
+.section-header{display:flex;align-items:center;gap:12px;margin-bottom:1.5rem}
+.section-num{font-family:var(--font-mono);font-size:11px;color:var(--green);background:var(--green-dark);border:0.5px solid var(--green-mid);border-radius:99px;padding:3px 10px;white-space:nowrap}
+.section-title{font-family:var(--font-display);font-size:22px;font-weight:500;color:var(--white);letter-spacing:-0.3px}
+.label{font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--cream-faint);margin-bottom:8px}
+.divider{border:none;border-top:0.5px solid var(--cream-faint);margin:0 0 1.5rem}
+
+/* PLAN TOGGLE */
+.plan-toggle{display:flex;background:var(--bg-2);border:0.5px solid var(--cream-faint);border-radius:99px;padding:3px;width:fit-content}
+.plan-btn{padding:7px 20px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;border:none;border-radius:99px;cursor:pointer;background:transparent;color:var(--cream-faint);transition:all 0.2s}
+.plan-btn.on{background:var(--green-dark);color:var(--green);border:0.5px solid var(--green-mid)}
+.plan-btn.pro-on{background:var(--amber-dark);color:var(--amber);border:0.5px solid var(--amber-mid)}
+
+/* TOKEN INPUT */
+.token-row{display:none;align-items:center;gap:8px;padding:12px 14px;background:var(--bg-2);border:0.5px solid var(--green-mid);border-radius:var(--radius-md);margin-bottom:1rem}
+.token-row.on{display:flex}
+.token-row i{font-size:16px;color:var(--green);flex-shrink:0}
+.token-row input{flex:1;font-family:var(--font-mono);font-size:12px;background:transparent;border:none;color:var(--cream);outline:none}
+.token-row input::placeholder{color:var(--cream-faint)}
+.token-verify{padding:5px 12px;font-family:var(--font-mono);font-size:10px;background:var(--green-dark);border:0.5px solid var(--green-mid);border-radius:99px;color:var(--green);cursor:pointer;white-space:nowrap;transition:all 0.15s}
+.token-verify:hover{background:var(--green-mid)}
+.token-status{font-family:var(--font-mono);font-size:11px;padding:6px 12px;border-radius:var(--radius-sm);margin-bottom:1rem;display:none}
+.token-status.ok{display:block;background:var(--green-dark);color:var(--green);border:0.5px solid var(--green-mid)}
+.token-status.err{display:block;background:#3d0000;color:var(--red);border:0.5px solid #660000}
+
+/* DROPZONES */
+.dropzone{border:1px dashed var(--cream-faint);border-radius:var(--radius-md);padding:2.5rem 1.5rem;text-align:center;cursor:pointer;position:relative;background:var(--bg-2);transition:all 0.2s;margin-bottom:10px}
+.dropzone:hover{border-color:var(--green-dim);background:var(--bg-3)}
+.dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dropzone i{font-size:32px;color:var(--green);display:block;margin-bottom:10px}
+.dropzone .dz-label{font-size:14px;color:var(--cream-dim)}
+.dropzone .dz-sub{font-size:11px;color:var(--cream-faint);margin-top:5px}
+.pro-dropzone{border:1px dashed var(--amber-mid);border-radius:var(--radius-md);padding:2.5rem 1.5rem;text-align:center;cursor:pointer;position:relative;background:var(--amber-dark);transition:all 0.2s;margin-bottom:10px;display:none}
+.pro-dropzone:hover{border-color:var(--amber);background:var(--amber-mid)}
+.pro-dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.pro-dropzone i{font-size:32px;color:var(--amber);display:block;margin-bottom:10px}
+.pro-dropzone .dz-label{font-size:14px;color:var(--cream-dim)}
+.pro-dropzone .dz-sub{font-size:11px;color:var(--amber-mid);margin-top:5px}
+.pro-dropzone.on{display:block}
+
+/* OUTPUT */
+.convert-status{display:none;font-family:var(--font-mono);font-size:12px;color:var(--green-dim);padding:10px 14px;background:var(--bg-3);border:0.5px solid var(--cream-faint);border-radius:var(--radius-sm);margin-bottom:1rem}
+.convert-status.on{display:block}
+.upsell-box{display:none;background:var(--amber-dark);border:0.5px solid var(--amber-mid);border-radius:var(--radius-md);padding:16px 18px;margin-bottom:1rem;text-align:center}
+.upsell-box.on{display:block}
+.upsell-box .ub-label{font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--amber);margin-bottom:6px}
+.upsell-box .ub-text{font-size:13px;color:var(--cream-dim);line-height:1.6;margin-bottom:12px}
+
+/* IMPACT PANEL */
+.impact-panel{display:none;margin-bottom:1rem}
+.impact-panel.on{display:block}
+.impact-label{font-family:var(--font-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--cream-faint);margin-bottom:10px;padding:0 2px}
+
+.impact-headline{
+  background:var(--green-dark);border:0.5px solid var(--green-mid);
+  border-radius:var(--radius-md);padding:16px;margin-bottom:10px;text-align:center;
+}
+.ih-main{font-family:var(--font-display);font-size:15px;color:var(--white);line-height:1.6;margin-bottom:8px}
+.ih-main strong{color:var(--green)}
+.ih-sub{font-family:var(--font-mono);font-size:10px;color:var(--green-dim)}
+
+.impact-bars{background:var(--bg-3);border:0.5px solid var(--cream-faint);border-radius:var(--radius-md);padding:14px;margin-bottom:10px}
+.ib-row{margin-bottom:10px}
+.ib-row:last-child{margin-bottom:0}
+.ib-labels{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:9px;color:var(--cream-faint);margin-bottom:5px}
+.ib-track{height:5px;background:var(--bg-4);border-radius:99px;overflow:hidden}
+.ib-fill{height:100%;border-radius:99px;transition:width 0.7s cubic-bezier(.4,0,.2,1)}
+.ib-raw{background:var(--red);width:100%}
+.ib-md{background:var(--green)}
+
+.impact-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.is-card{background:var(--bg-3);border:0.5px solid var(--cream-faint);border-radius:var(--radius-sm);padding:12px 8px;text-align:center}
+.is-val{font-family:var(--font-mono);font-size:18px;font-weight:500;color:var(--green);line-height:1;margin-bottom:4px}
+.is-label{font-family:var(--font-mono);font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--cream-faint);line-height:1.4}
+
+.impact-scale{background:var(--bg-3);border:0.5px solid var(--cream-faint);border-radius:var(--radius-md);padding:14px;margin-bottom:10px}
+.scale-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.scale-head span{font-family:var(--font-mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--cream-faint)}
+.scale-head strong{font-family:var(--font-mono);font-size:11px;color:var(--green)}
+.scale-slider{width:100%;-webkit-appearance:none;appearance:none;height:3px;border-radius:99px;background:var(--cream-faint);outline:none;margin-bottom:12px;cursor:pointer}
+.scale-slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--green);cursor:pointer;border:2px solid var(--bg)}
+.scale-slider::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--green);cursor:pointer;border:2px solid var(--bg)}
+.scale-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.scale-stat{text-align:center}
+.scale-stat .ss-val{font-family:var(--font-mono);font-size:16px;font-weight:500;color:var(--green);line-height:1}
+.scale-stat .ss-label{font-family:var(--font-mono);font-size:8px;color:var(--cream-faint);margin-top:4px;line-height:1.4}
+
+/* OUTPUT BOX */
+.output-box{display:none;background:var(--bg-2);border:0.5px solid var(--cream-faint);border-radius:var(--radius-md);overflow:hidden;margin-bottom:1rem}
+.output-box.on{display:block}
+.output-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:0.5px solid var(--cream-faint);background:var(--bg-3)}
+.output-toolbar span{font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--cream-faint)}
+.toolbar-btns{display:flex;gap:8px}
+.toolbar-btn{display:flex;align-items:center;gap:5px;padding:5px 12px;font-family:var(--font-mono);font-size:10px;border:0.5px solid var(--cream-faint);border-radius:99px;background:transparent;color:var(--cream-dim);cursor:pointer;transition:all 0.15s}
+.toolbar-btn i{font-size:13px}
+.toolbar-btn:hover{border-color:var(--green-dim);color:var(--green)}
+.output-content{font-family:var(--font-mono);font-size:12px;color:var(--cream-dim);line-height:1.7;padding:16px;max-height:260px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+.output-content::-webkit-scrollbar{width:4px}
+.output-content::-webkit-scrollbar-track{background:var(--bg-2)}
+.output-content::-webkit-scrollbar-thumb{background:var(--cream-faint);border-radius:99px}
+
+/* CALCULADORA (secundaria) */
+.calc-toggle{display:none;align-items:center;gap:8px;cursor:pointer;margin-bottom:1rem;font-family:var(--font-mono);font-size:10px;color:var(--cream-faint);letter-spacing:0.08em;text-transform:uppercase;user-select:none}
+.calc-toggle.on{display:flex}
+.calc-toggle i{font-size:14px}
+.calc-box{display:none;background:var(--bg-3);border:0.5px solid var(--cream-faint);border-radius:var(--radius-md);padding:16px;margin-bottom:1rem}
+.calc-box.on{display:block}
+.type-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+.type-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;font-family:var(--font-mono);font-size:10px;border:0.5px solid var(--cream-faint);border-radius:99px;background:transparent;color:var(--cream-dim);cursor:pointer;transition:all 0.15s}
+.type-btn i{font-size:12px}
+.type-btn:hover{border-color:var(--green-dim);color:var(--green)}
+.type-btn.on{background:var(--green-dark);border-color:var(--green-mid);color:var(--green)}
+.manual-row{display:flex;align-items:center;gap:8px}
+.manual-row label{font-family:var(--font-mono);font-size:10px;color:var(--cream-faint);white-space:nowrap}
+.manual-row input[type="number"]{flex:1;padding:8px 12px;font-family:var(--font-mono);font-size:12px;border:0.5px solid var(--cream-faint);border-radius:var(--radius-sm);background:var(--bg-2);color:var(--cream);outline:none;transition:border-color 0.15s}
+.manual-row input[type="number"]:focus{border-color:var(--green)}
+.manual-row input[type="number"]::placeholder{color:var(--cream-faint)}
+.manual-row select{padding:8px 10px;font-family:var(--font-mono);font-size:10px;border:0.5px solid var(--cream-faint);border-radius:var(--radius-sm);background:var(--bg-2);color:var(--cream-dim);outline:none;width:72px}
+.calc-result{display:none;margin-top:14px;padding-top:14px;border-top:0.5px solid var(--cream-faint)}
+.calc-result.on{display:block}
+.calc-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.calc-card{background:var(--bg-2);border:0.5px solid var(--cream-faint);border-radius:var(--radius-sm);padding:12px 8px;text-align:center}
+.calc-card .cc-val{font-family:var(--font-mono);font-size:18px;font-weight:500;color:var(--cream);line-height:1;margin-bottom:4px}
+.calc-card .cc-label{font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--cream-faint)}
+.calc-card.accent .cc-val{color:var(--green)}
+
+/* STEPS */
+.steps{display:flex;flex-direction:column;gap:1rem}
+.step{display:flex;gap:16px;padding:16px;background:var(--bg-2);border:0.5px solid var(--cream-faint);border-radius:var(--radius-md)}
+.step-num{font-family:var(--font-mono);font-size:18px;font-weight:500;color:var(--green);min-width:24px;line-height:1.3}
+.step-title{font-family:var(--font-display);font-size:15px;font-weight:500;color:var(--white);margin-bottom:5px}
+.step-desc{font-size:13px;color:var(--cream-dim);line-height:1.7}
+.step-desc code{font-family:var(--font-mono);font-size:11px;color:var(--green);background:var(--green-dark);padding:2px 7px;border-radius:4px}
+.step-desc em{font-style:italic;color:var(--cream-faint)}
+.tip-box{background:var(--bg-3);border:0.5px solid var(--amber);border-radius:var(--radius-md);padding:14px 16px;margin-top:1.25rem;font-size:13px;color:var(--cream-dim);line-height:1.7}
+.tip-label{font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--amber);margin-bottom:6px}
+
+/* ===== PRICING ===== */
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem}
+.plan-card{background:var(--bg-2);border:0.5px solid var(--cream-faint);border-radius:var(--radius-lg);padding:24px 20px;position:relative;display:flex;flex-direction:column;transition:border-color 0.2s}
+.plan-card:hover{border-color:var(--cream-dim)}
+.plan-card.featured{background:var(--green-dark);border-color:var(--green-mid);box-shadow:0 0 0 1px var(--green-mid)}
+.plan-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--bg);background:var(--green);border-radius:99px;padding:3px 12px;white-space:nowrap;font-weight:500}
+.plan-name{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--cream-faint);margin-bottom:12px}
+.plan-card.featured .plan-name{color:var(--green-dim)}
+.plan-price{font-family:var(--font-display);font-size:36px;font-weight:500;color:var(--white);line-height:1;margin-bottom:4px}
+.plan-card.featured .plan-price{color:var(--green)}
+.plan-price sup{font-size:16px;vertical-align:super;margin-right:2px;font-family:var(--font-mono)}
+.plan-period{font-family:var(--font-mono);font-size:10px;color:var(--cream-faint);margin-bottom:4px}
+.plan-equiv{font-family:var(--font-mono);font-size:10px;color:var(--green-dim);margin-bottom:18px;min-height:16px}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:20px;flex:1}
+.plan-features li{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--cream-dim);line-height:1.4}
+.plan-features li i{font-size:13px;color:var(--green);flex-shrink:0;margin-top:1px}
+.plan-cta{width:100%;padding:11px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.05em;border-radius:var(--radius-sm);border:0.5px solid var(--cream-faint);background:transparent;color:var(--cream-dim);cursor:pointer;transition:all 0.15s;text-align:center;text-decoration:none;display:block}
+.plan-cta:hover{border-color:var(--cream-dim);color:var(--cream);background:var(--bg-3)}
+.plan-card.featured .plan-cta{background:var(--green);border-color:var(--green);color:var(--bg);font-weight:500}
+.plan-card.featured .plan-cta:hover{background:var(--green-dim)}
+.monthly-note{font-family:var(--font-mono);font-size:11px;color:var(--cream-faint);text-align:center;padding:12px;border:0.5px solid var(--cream-faint);border-radius:var(--radius-sm);margin-bottom:1rem}
+.monthly-note strong{color:var(--cream-dim)}
+.monthly-note a{color:var(--green-dim);text-underline-offset:3px}
+.pro-badge{display:inline-block;font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--amber);background:var(--amber-dark);border:0.5px solid var(--amber-mid);border-radius:99px;padding:2px 8px;margin-left:6px;vertical-align:middle}
+
+/* BTNS */
+.btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;font-family:var(--font-mono);font-size:12px;border:0.5px solid var(--cream-faint);border-radius:var(--radius-sm);background:transparent;color:var(--cream-dim);cursor:pointer;text-decoration:none;transition:all 0.15s;margin-bottom:8px;letter-spacing:0.02em}
+.btn i{font-size:15px}
+.btn:hover{border-color:var(--cream-dim);color:var(--cream);background:var(--bg-3)}
+.btn.cta-amber{background:var(--amber-dark);border-color:var(--amber-mid);color:var(--amber)}
+.btn.cta-amber:hover{background:var(--amber-mid)}
+.note{font-family:var(--font-mono);font-size:10px;color:var(--cream-faint);text-align:center;margin-top:8px;line-height:1.7}
+
+/* FOOTER */
+footer{margin-top:1rem;padding-top:2rem;border-top:0.5px solid var(--cream-faint);text-align:center}
+.footer-sep{width:32px;height:0.5px;background:var(--cream-faint);margin:0 auto 1.5rem}
+.footer-text{font-family:var(--font-display);font-style:italic;font-size:13.5px;color:var(--cream-faint);line-height:2;max-width:480px;margin:0 auto 1.5rem}
+.footer-text em{font-style:normal;color:var(--cream-dim)}
+.footer-text a{color:var(--green-dim);text-decoration:underline;text-underline-offset:3px;font-style:normal;transition:color 0.15s}
+.footer-text a:hover{color:var(--green)}
+.kofi-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 24px;font-family:var(--font-mono);font-size:11px;background:transparent;border:0.5px solid var(--cream-faint);border-radius:99px;color:var(--cream-dim);text-decoration:none;transition:all 0.15s;margin-bottom:1.5rem;letter-spacing:0.05em}
+.kofi-btn i{font-size:15px;color:var(--green)}
+.kofi-btn:hover{background:var(--green-dark);border-color:var(--green-mid);color:var(--green)}
+.footer-sign{font-family:var(--font-display);font-style:italic;font-size:12px;color:var(--cream-faint)}
+.footer-sign strong{font-style:normal;font-weight:500;color:var(--green-dim)}
+
+@media(max-width:520px){
+  .pricing-grid{grid-template-columns:1fr}
+  .hero-impact{grid-template-columns:repeat(3,1fr)}
+  .hi-card .hi-val{font-size:16px}
+  .step{flex-direction:column;gap:8px}
+}
+
+/* ===== AFILIADOS ===== */
+.affiliate-section{margin-bottom:3rem;padding-bottom:3rem;border-bottom:0.5px solid var(--cream-faint)}
+.affiliate-intro{
+  font-family:var(--font-display);font-style:italic;
+  font-size:14px;color:var(--cream-faint);line-height:1.9;
+  margin-bottom:1.5rem;
+}
+.affiliate-intro em{font-style:normal;color:var(--cream-dim)}
+.affiliate-intro a{color:var(--green-dim);text-underline-offset:3px}
+
+.affiliate-grid{display:flex;flex-direction:column;gap:10px}
+.affiliate-card{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 16px;
+  background:var(--bg-2);border:0.5px solid var(--cream-faint);
+  border-radius:var(--radius-md);text-decoration:none;
+  transition:all 0.15s;
+}
+.affiliate-card:hover{border-color:var(--green-mid);background:var(--bg-3)}
+.affiliate-card .ac-icon{
+  font-size:22px;color:var(--green);flex-shrink:0;
+  width:36px;text-align:center;
+}
+.affiliate-card .ac-body{flex:1}
+.affiliate-card .ac-title{
+  font-family:var(--font-mono);font-size:12px;font-weight:500;
+  color:var(--cream);margin-bottom:3px;
+}
+.affiliate-card .ac-desc{font-size:12px;color:var(--cream-dim);line-height:1.5}
+.affiliate-card .ac-desc em{font-style:italic;color:var(--cream-faint);font-size:11px}
+.affiliate-card .ac-arrow{
+  font-family:var(--font-mono);font-size:11px;
+  color:var(--green-dim);flex-shrink:0;
+}
+.affiliate-note{
+  font-family:var(--font-mono);font-size:10px;
+  color:var(--cream-faint);margin-top:10px;
+  text-align:center;line-height:1.6;
+}
+
+/* ===== EBOOK ===== */
+.ebook-section{margin-bottom:3rem;padding-bottom:3rem;border-bottom:0.5px solid var(--cream-faint)}
+.ebook-card{
+  background:var(--bg-2);
+  border:0.5px solid var(--cream-faint);
+  border-radius:var(--radius-lg);
+  padding:24px;
+  display:flex;gap:20px;
+  align-items:flex-start;
+}
+.ebook-cover{
+  width:80px;flex-shrink:0;
+  background:var(--green-dark);border:0.5px solid var(--green-mid);
+  border-radius:var(--radius-sm);
+  aspect-ratio:3/4;
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:4px;
+}
+.ebook-cover i{font-size:24px;color:var(--green)}
+.ebook-cover span{font-family:var(--font-mono);font-size:8px;color:var(--green-dim);letter-spacing:0.1em;text-transform:uppercase}
+.ebook-body{flex:1}
+.ebook-badge{
+  display:inline-block;font-family:var(--font-mono);font-size:9px;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--amber);background:var(--amber-dark);border:0.5px solid var(--amber-mid);
+  border-radius:99px;padding:2px 10px;margin-bottom:10px;
+}
+.ebook-title{
+  font-family:var(--font-display);font-size:18px;font-weight:500;
+  color:var(--white);line-height:1.3;margin-bottom:6px;
+}
+.ebook-title em{font-style:italic;color:var(--green)}
+.ebook-desc{font-size:13px;color:var(--cream-dim);line-height:1.6;margin-bottom:14px}
+.ebook-price-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ebook-price{
+  font-family:var(--font-mono);font-size:22px;font-weight:500;color:var(--green);
+}
+.ebook-cta{
+  padding:8px 20px;font-family:var(--font-mono);font-size:11px;
+  background:var(--green-dark);border:0.5px solid var(--green-mid);
+  border-radius:var(--radius-sm);color:var(--green);
+  cursor:pointer;text-decoration:none;transition:all 0.15s;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.ebook-cta:hover{background:var(--green-mid)}
+.ebook-cta.soon{
+  background:transparent;border-color:var(--cream-faint);
+  color:var(--cream-faint);cursor:default;
+}
+.ebook-cta.soon:hover{background:transparent;border-color:var(--cream-faint)}
+</style>
+</head>
+<body>
+<main class="page">
+
+  <nav class="nav">
+    <a href="#convertir">convertir</a>
+    <a href="#como-usarlo">cómo usarlo</a>
+    <a href="#herramientas">herramientas</a>
+    <a href="#ebook">ebook</a>
+    <a href="#precios">precios</a>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <header class="hero">
+    <div class="hero-badge">gratis · sin registro</div>
+    <h1 class="hero-title">Token<em>Slayer</em></h1>
+
+    <p class="hero-hook">
+      Cada documento que subes a Claude sin convertir<br>
+      <strong>le cuesta el doble de tokens de lo que debería.</strong><br>
+      Esto lo arregla en 10 segundos.
+    </p>
+
+    <div class="hero-impact">
+      <div class="hi-card">
+        <div class="hi-val">−60%</div>
+        <div class="hi-label">tokens en PDFs típicos</div>
+      </div>
+      <div class="hi-card">
+        <div class="hi-val" id="heroConvs">+15</div>
+        <div class="hi-label">conversaciones extra<br>por documento</div>
+      </div>
+      <div class="hi-card">
+        <div class="hi-val">10s</div>
+        <div class="hi-label">lo que tarda<br>la conversión</div>
+      </div>
+    </div>
+
+    <a href="#convertir" class="hero-cta">
+      <i class="ti ti-file-arrow-right"></i>
+      Convertir mi documento
+    </a>
+    <p class="hero-by">by <strong>Jota!</strong></p>
+  </header>
+
+  <!-- ===== 01 CONVERTIR ===== -->
+  <section class="section" id="convertir">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2 class="section-title">Convierte tu archivo</h2>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
+      <div class="plan-toggle">
+        <button class="plan-btn on" id="btnFree" onclick="setPlan('free')">⚡ Free</button>
+        <button class="plan-btn" id="btnPro" onclick="setPlan('pro')">★ PRO</button>
+      </div>
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--cream-faint)" id="planNote">PDF · Word · TXT · CSV · HTML</span>
+    </div>
+
+    <div class="token-row" id="tokenRow">
+      <i class="ti ti-key"></i>
+      <input type="text" id="proTokenInput" placeholder="Pega aquí tu token PRO..."/>
+      <button class="token-verify" onclick="verifyToken()">verificar</button>
+    </div>
+    <div class="token-status" id="tokenStatus"></div>
+
+    <!-- FREE DROPZONE -->
+    <div class="dropzone" id="freeDropzone">
+      <input type="file" accept=".pdf,.docx,.doc,.txt,.md,.csv,.html,.htm" onchange="handleConvertFree(this)"/>
+      <i class="ti ti-file-arrow-right"></i>
+      <div class="dz-label">Arrastra tu archivo o haz clic</div>
+      <div class="dz-sub">PDF · Word · TXT · CSV · HTML — procesado en tu navegador, sin subir nada</div>
+    </div>
+
+    <!-- PRO DROPZONE -->
+    <div class="pro-dropzone" id="proDropzone">
+      <input type="file" accept=".pdf,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.csv,.txt,.md,.html,.htm,.xml,.json" onchange="handleConvertPro(this)"/>
+      <i class="ti ti-file-arrow-right"></i>
+      <div class="dz-label">Arrastra tu archivo o haz clic</div>
+      <div class="dz-sub">Todos los formatos · MarkItDown real en servidor <span class="pro-badge">PRO</span></div>
+    </div>
+
+    <div class="convert-status" id="convertStatus">⟳ Procesando...</div>
+
+    <!-- UPSELL formato PRO-only -->
+    <div class="upsell-box" id="upsellBox">
+      <div class="ub-label">⚡ Formato exclusivo PRO</div>
+      <div class="ub-text">PowerPoint y Excel necesitan procesado en servidor.<br>Con PRO conviertes todo — <strong style="color:var(--amber)">$19/año</strong>.</div>
+      <a href="#precios" class="btn cta-amber" style="max-width:260px;margin:0 auto 0">
+        <i class="ti ti-credit-card"></i>Ver planes PRO
+      </a>
+    </div>
+
+    <!-- IMPACT PANEL -->
+    <div class="impact-panel" id="impactPanel">
+
+      <div class="impact-label">// tu ahorro real · calculado con este archivo</div>
+
+      <div class="impact-headline" id="impactHeadline">
+        <div class="ih-main" id="impactMsg">—</div>
+        <div class="ih-sub" id="impactSub">—</div>
+      </div>
+
+      <div class="impact-bars">
+        <div class="ib-row">
+          <div class="ib-labels"><span>Sin convertir</span><span id="ibRawLbl">—</span></div>
+          <div class="ib-track"><div class="ib-fill ib-raw" style="width:100%"></div></div>
+        </div>
+        <div class="ib-row">
+          <div class="ib-labels"><span>Con Markdown</span><span id="ibMdLbl">—</span></div>
+          <div class="ib-track"><div class="ib-fill ib-md" id="ibMdBar" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <div class="impact-stats">
+        <div class="is-card">
+          <div class="is-val" id="isSaved">—</div>
+          <div class="is-label">tokens liberados<br>en este archivo</div>
+        </div>
+        <div class="is-card">
+          <div class="is-val" id="isPct">—</div>
+          <div class="is-label">menos contexto<br>consumido</div>
+        </div>
+        <div class="is-card">
+          <div class="is-val" id="isConvs">—</div>
+          <div class="is-label">conversaciones extra<br>con Claude</div>
+        </div>
+      </div>
+
+      <div class="impact-scale">
+        <div class="scale-head">
+          <span>Escala mensual — ¿cuántos docs procesas?</span>
+          <strong id="sliderVal">10 docs/mes</strong>
+        </div>
+        <input type="range" class="scale-slider" id="docsSlider" min="1" max="100" value="10" oninput="updateScale()"/>
+        <div class="scale-grid">
+          <div class="scale-stat">
+            <div class="ss-val" id="monthTokens">—</div>
+            <div class="ss-label">tokens liberados<br>al mes</div>
+          </div>
+          <div class="scale-stat">
+            <div class="ss-val" id="monthConvs">—</div>
+            <div class="ss-label">conversaciones extra<br>al mes</div>
+          </div>
+          <div class="scale-stat">
+            <div class="ss-val" id="monthFiles">—</div>
+            <div class="ss-label">docs procesados<br>ese mes</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- OUTPUT BOX -->
+    <div class="output-box" id="outputBox">
+      <div class="output-toolbar">
+        <span id="outputLabel">output.md</span>
+        <div class="toolbar-btns">
+          <button class="toolbar-btn" id="copyBtn" onclick="copyMarkdown()"><i class="ti ti-copy"></i>copiar</button>
+          <button class="toolbar-btn" onclick="downloadMarkdown()"><i class="ti ti-download"></i>descargar</button>
+        </div>
+      </div>
+      <div class="output-content" id="outputContent"></div>
+    </div>
+
+    <!-- CALCULADORA SECUNDARIA -->
+    <div class="calc-toggle" id="calcToggle" onclick="toggleCalc()">
+      <i class="ti ti-calculator" id="calcIcon"></i>
+      <span>Estimar ahorro sin subir archivo</span>
+    </div>
+    <div class="calc-box" id="calcBox">
+      <div class="label" style="margin-bottom:10px">Tipo de archivo</div>
+      <div class="type-row">
+        <button class="type-btn on" onclick="setType('pdf',this)"><i class="ti ti-file-type-pdf"></i>PDF</button>
+        <button class="type-btn" onclick="setType('docx',this)"><i class="ti ti-file-word"></i>Word</button>
+        <button class="type-btn" onclick="setType('pptx',this)"><i class="ti ti-presentation"></i>PPTX</button>
+        <button class="type-btn" onclick="setType('xlsx',this)"><i class="ti ti-table"></i>Excel</button>
+        <button class="type-btn" onclick="setType('html',this)"><i class="ti ti-code"></i>HTML</button>
+      </div>
+      <div class="manual-row">
+        <label>Tamaño:</label>
+        <input type="number" id="manualKB" min="1" placeholder="ej: 500" oninput="calcManual()"/>
+        <select id="manualUnit" onchange="calcManual()">
+          <option value="1">KB</option><option value="1024">MB</option>
+        </select>
+      </div>
+      <div class="calc-result" id="calcResult">
+        <div class="calc-metrics">
+          <div class="calc-card"><div class="cc-val" id="cRaw">—</div><div class="cc-label">tokens original</div></div>
+          <div class="calc-card accent"><div class="cc-val" id="cMd">—</div><div class="cc-label">tokens markdown</div></div>
+          <div class="calc-card"><div class="cc-val" id="cPct">—</div><div class="cc-label">reducción</div></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="note">Free: PDF texto, Word, TXT, CSV, HTML — en navegador.<br>PRO: todos los formatos con MarkItDown real — en servidor.</p>
+  </section>
+
+  <!-- ===== 02 CÓMO USARLO ===== -->
+  <section class="section" id="como-usarlo">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2 class="section-title">Cómo usarlo con Claude</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Convierte arriba y copia el Markdown</div>
+          <div class="step-desc">Sube tu archivo, espera 10 segundos, pulsa <code>copiar</code>. Markdown limpio en tu portapapeles. <em>No copies el original — copia el Markdown.</em></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Pégalo en Claude con contexto</div>
+          <div class="step-desc">Empieza así: <code>Aquí el contenido de [nombre del doc]:</code><br>Pega el Markdown. Añade tu pregunta al final. Claude entiende la estructura sin adivinar el formato.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Documentos largos: en bloques</div>
+          <div class="step-desc">Si supera 4.000 palabras, parte en secciones. Dile: <code>Voy a enviarte el documento en partes. Espera hasta que diga "listo".</code></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Pide lo que necesitas, sin rodeos</div>
+          <div class="step-desc"><code>Resume los puntos clave</code> · <code>Extrae todas las fechas</code> · <code>Identifica las cláusulas de riesgo</code>. Con Markdown limpio, Claude va directo al grano.</div>
+        </div>
+      </div>
+    </div>
+    <div class="tip-box">
+      <div class="tip-label">// consejo de Jota</div>
+      El Markdown no es magia — es higiene. Un documento caótico convertido a Markdown sigue siendo caótico. La diferencia es que Claude trabaja con él sin quemar el doble de tokens intentando descifrar el formato. Si tu doc es un desastre, aprovecha para reorganizarlo. O pídele a Claude que lo haga. Para eso le pagas.
+    </div>
+  </section>
+
+
+  <!-- ===== AFILIADOS ===== -->
+  <section class="affiliate-section" id="herramientas">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2 class="section-title">Herramientas que uso</h2>
+    </div>
+
+    <p class="affiliate-intro">
+      Uso estas herramientas a diario. Si decides probarlas desde aquí,
+      me llevas una pequeña comisión — <em>sin que te cueste un céntimo más</em>.<br>
+      No las recomiendo porque me paguen. Las recomiendo porque funcionan.<br>
+      La diferencia es que aquí soy honesto con los dos.<br>
+      <em style="font-size:12px;color:var(--cream-faint)">— Jota.</em>
+    </p>
+
+    <div class="affiliate-grid">
+
+      <a href="https://claude.ai/upgrade" target="_blank" rel="noopener" class="affiliate-card">
+        <div class="ac-icon"><i class="ti ti-sparkles"></i></div>
+        <div class="ac-body">
+          <div class="ac-title">Claude Pro — Anthropic</div>
+          <div class="ac-desc">
+            Si usas TokenSlayer, ya sabes para qué sirve Claude. El plan Pro multiplica el contexto,
+            da acceso a los modelos más potentes y elimina los límites de uso.
+            <em>La herramienta que hace que esta página tenga sentido.</em>
+          </div>
+        </div>
+        <div class="ac-arrow">→</div>
+      </a>
+
+      <a href="https://www.notion.so/product/ai" target="_blank" rel="noopener" class="affiliate-card">
+        <div class="ac-icon"><i class="ti ti-layout-kanban"></i></div>
+        <div class="ac-body">
+          <div class="ac-title">Notion AI</div>
+          <div class="ac-desc">
+            Donde vive la documentación que luego conviertes aquí.
+            La combinación Notion → TokenSlayer → Claude es el flujo
+            que más tiempo me ahorra cada semana.
+            <em>Exporta como Markdown nativo — conversión instantánea.</em>
+          </div>
+        </div>
+        <div class="ac-arrow">→</div>
+      </a>
+
+      <a href="https://perplexity.ai" target="_blank" rel="noopener" class="affiliate-card">
+        <div class="ac-icon"><i class="ti ti-world-search"></i></div>
+        <div class="ac-body">
+          <div class="ac-title">Perplexity Pro</div>
+          <div class="ac-desc">
+            Búsqueda con IA que cita fuentes. Útil cuando necesitas contexto actualizado
+            antes de pasárselo a Claude en Markdown.
+            <em>Complemento natural del flujo de investigación.</em>
+          </div>
+        </div>
+        <div class="ac-arrow">→</div>
+      </a>
+
+    </div>
+
+    <p class="affiliate-note">
+      // enlaces de afiliado — me llevan una comisión si compras · el precio para ti es el mismo
+    </p>
+  </section>
+
+  <!-- ===== EBOOK ===== -->
+  <section class="ebook-section" id="ebook">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Llévate el manual</h2>
+    </div>
+
+    <div class="ebook-card">
+      <div class="ebook-cover">
+        <i class="ti ti-book-2"></i>
+        <span>ebook</span>
+      </div>
+      <div class="ebook-body">
+        <div class="ebook-badge">próximamente</div>
+        <div class="ebook-title">Claude como <em>consultor</em><br>de documentos</div>
+        <div class="ebook-desc">
+          Todo lo que aprendí optimizando miles de tokens en documentos reales.
+          Prompts exactos, flujos probados, errores que no necesitas cometer tú.
+          Sin teoría — solo lo que funciona en producción.
+        </div>
+        <div class="ebook-price-row">
+          <span class="ebook-price">$9</span>
+          <a href="#" class="ebook-cta soon">
+            <i class="ti ti-clock"></i>
+            Avísame cuando esté
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 05 PRECIOS ===== -->
+  <section class="section" id="precios">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2 class="section-title">Planes</h2>
+    </div>
+
+    <div class="pricing-grid">
+      <div class="plan-card">
+        <div class="plan-name">Free</div>
+        <div class="plan-price"><sup>$</sup>0</div>
+        <div class="plan-period">para siempre</div>
+        <div class="plan-equiv">&nbsp;</div>
+        <ul class="plan-features">
+          <li><i class="ti ti-check"></i>PDF, Word, TXT, CSV, HTML</li>
+          <li><i class="ti ti-check"></i>Procesado en navegador</li>
+          <li><i class="ti ti-check"></i>Panel de ahorro en tiempo real</li>
+          <li><i class="ti ti-check"></i>Copiar y descargar .md</li>
+          <li><i class="ti ti-check"></i>Instrucciones para Claude</li>
+        </ul>
+        <a href="#convertir" class="plan-cta" onclick="setPlan('free')">Usar gratis</a>
+      </div>
+
+      <div class="plan-card featured">
+        <div class="plan-badge">★ Mejor valor</div>
+        <div class="plan-name">PRO Anual</div>
+        <div class="plan-price"><sup>$</sup>19</div>
+        <div class="plan-period">/ año · renovación automática</div>
+        <div class="plan-equiv">= $1,58/mes · cancela cuando quieras</div>
+        <ul class="plan-features">
+          <li><i class="ti ti-check"></i>Todo lo de Free</li>
+          <li><i class="ti ti-check"></i><strong>PowerPoint, Excel, XML, JSON</strong></li>
+          <li><i class="ti ti-check"></i>MarkItDown real en servidor</li>
+          <li><i class="ti ti-check"></i>Archivos hasta 20 MB</li>
+          <li><i class="ti ti-check"></i>Historial de conversiones</li>
+        </ul>
+        <a href="#" class="plan-cta" onclick="goStripe('annual');return false">Suscribirse — $19/año</a>
+      </div>
+    </div>
+
+    <div class="monthly-note">
+      Sin compromiso anual: <strong>$3,50/mes</strong> · mismas funciones PRO.
+      <a href="#" onclick="goStripe('monthly');return false">Suscribirse mensual →</a>
+    </div>
+    <p class="note">Recibirás tu token PRO por email en menos de 5 minutos tras el pago.</p>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-sep"></div>
+    <p class="footer-text">
+      La versión Free existe porque creo que el conocimiento debería ser accesible.<br>
+      La versión PRO existe porque el servidor no se paga con buenas intenciones.<br><br>
+      Si ahorras tokens, optimizas contextos y acabas facturando más,
+      te invito a que <em>no me invites a un café</em> —
+      porque el café ya me lo pago yo.<br>
+      Pero si quieres decir gracias sin pagar 19$,
+      <a href="https://ko-fi.com/jotasantos" target="_blank" rel="noopener">Ko-fi existe para eso</a>.<br>
+      No es la mensualidad del geriátrico. No es la salida del finde.<br>
+      Es reconocer que alguien pensó esto para que tú no tuvieras que hacerlo.
+    </p>
+    <a href="https://ko-fi.com/jotasantos" target="_blank" rel="noopener" class="kofi-btn">
+      <i class="ti ti-heart"></i>apoya en ko-fi
+    </a>
+    <p class="footer-sign">— <strong>Jota.</strong> El que te ahorró los tokens.</p>
+  </footer>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+var CONFIG = {
+  backendUrl:    'https://TU-APP.onrender.com',
+  stripeMonthly: 'https://buy.stripe.com/TU_LINK_MENSUAL',
+  stripeAnnual:  'https://buy.stripe.com/TU_LINK_ANUAL'
+};
+if(typeof pdfjsLib!=='undefined'){
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+var TOK_PER_CONV = 2000; // tokens por conversación típica
+var savedTokGlobal = 0;
+var currentPlan = 'free';
+var proToken = localStorage.getItem('ts_pro_token') || '';
+var currentMarkdown = '', currentFileName = 'output';
+var calcOpen = false;
+
+/* STRIPE */
+function goStripe(plan){
+  window.open(plan==='annual' ? CONFIG.stripeAnnual : CONFIG.stripeMonthly, '_blank');
+}
+
+/* PLAN TOGGLE */
+function setPlan(plan){
+  currentPlan = plan;
+  var isFree = plan === 'free';
+  document.getElementById('btnFree').className = 'plan-btn' + (isFree ? ' on' : '');
+  document.getElementById('btnPro').className  = 'plan-btn' + (isFree ? '' : ' pro-on');
+  document.getElementById('tokenRow').className = 'token-row' + (isFree ? '' : ' on');
+  document.getElementById('freeDropzone').style.display = isFree ? 'block' : 'none';
+  document.getElementById('proDropzone').className = 'pro-dropzone' + (isFree ? '' : ' on');
+  document.getElementById('planNote').textContent = isFree
+    ? 'PDF · Word · TXT · CSV · HTML'
+    : 'Todos los formatos · hasta 20 MB';
+  document.getElementById('upsellBox').classList.remove('on');
+  if(!isFree && proToken){
+    document.getElementById('proTokenInput').value = proToken;
+    showTokenStatus(true, '✓ Token PRO activo');
+  }
+}
+
+/* TOKEN */
+function verifyToken(){
+  var t = document.getElementById('proTokenInput').value.trim();
+  if(!t){ showTokenStatus(false,'Introduce tu token PRO'); return; }
+  proToken = t; localStorage.setItem('ts_pro_token', t);
+  showTokenStatus(true, '✓ Token guardado — se verificará al convertir');
+}
+function showTokenStatus(ok, msg){
+  var el = document.getElementById('tokenStatus');
+  el.textContent = msg; el.className = 'token-status ' + (ok ? 'ok' : 'err');
+}
+
+/* CALC TOGGLE */
+function toggleCalc(){
+  calcOpen = !calcOpen;
+  document.getElementById('calcBox').className = 'calc-box' + (calcOpen ? ' on' : '');
+  document.getElementById('calcIcon').className = calcOpen ? 'ti ti-chevron-up' : 'ti ti-calculator';
+}
+
+/* CALCULADORA SECUNDARIA */
+var cType='pdf';
+var R={pdf:{tpk:500,mr:0.40},docx:{tpk:380,mr:0.45},pptx:{tpk:420,mr:0.38},xlsx:{tpk:300,mr:0.50},html:{tpk:350,mr:0.55}};
+function setType(t,el){
+  cType=t;
+  document.querySelectorAll('.type-btn').forEach(function(b){b.classList.remove('on')});
+  el.classList.add('on');
+  calcManual();
+}
+function calcManual(){
+  var v=parseFloat(document.getElementById('manualKB').value);
+  var u=parseFloat(document.getElementById('manualUnit').value);
+  if(!v||v<=0) return;
+  var kb=v*u, r=R[cType];
+  var raw=Math.round(kb*r.tpk), md=Math.round(raw*r.mr), pct=Math.round(((raw-md)/raw)*100);
+  document.getElementById('cRaw').textContent=fmt(raw);
+  document.getElementById('cMd').textContent=fmt(md);
+  document.getElementById('cPct').textContent='−'+pct+'%';
+  document.getElementById('calcResult').classList.add('on');
+}
+
+/* FORMAT */
+function fmt(n){
+  if(n>=1000000) return (n/1000000).toFixed(1)+'M';
+  if(n>=1000)    return Math.round(n/1000)+'K';
+  return String(Math.round(n));
+}
+
+/* CONVERSOR FREE */
+function handleConvertFree(inp){
+  if(!inp.files||!inp.files[0]) return;
+  var f=inp.files[0];
+  var ext=f.name.split('.').pop().toLowerCase();
+  var proOnly=['pptx','ppt','xlsx','xls','xml','json'];
+  if(proOnly.indexOf(ext)!==-1){ document.getElementById('upsellBox').classList.add('on'); return; }
+  document.getElementById('upsellBox').classList.remove('on');
+  currentFileName=f.name.replace(/\.[^.]+$/,'');
+  document.getElementById('convertStatus').textContent='⟳ Procesando...';
+  document.getElementById('convertStatus').classList.add('on');
+  document.getElementById('outputBox').classList.remove('on');
+  document.getElementById('impactPanel').classList.remove('on');
+  document.getElementById('calcToggle').classList.remove('on');
+  if(ext==='pdf') convertPDF(f);
+  else if(ext==='docx'||ext==='doc') convertDOCX(f);
+  else if(ext==='csv') convertCSV(f);
+  else if(ext==='html'||ext==='htm') convertHTML(f);
+  else convertText(f);
+}
+
+/* CONVERSOR PRO */
+function handleConvertPro(inp){
+  if(!inp.files||!inp.files[0]) return;
+  if(!proToken){ showTokenStatus(false,'Introduce y verifica tu token PRO primero'); document.getElementById('tokenRow').scrollIntoView({behavior:'smooth'}); return; }
+  var f=inp.files[0]; currentFileName=f.name.replace(/\.[^.]+$/,'');
+  document.getElementById('convertStatus').textContent='⟳ Enviando al servidor...';
+  document.getElementById('convertStatus').classList.add('on');
+  document.getElementById('outputBox').classList.remove('on');
+  document.getElementById('impactPanel').classList.remove('on');
+  var fd=new FormData(); fd.append('file',f);
+  fetch(CONFIG.backendUrl+'/convert',{method:'POST',headers:{'X-Pro-Token':proToken},body:fd})
+  .then(function(r){
+    if(r.status===401) throw new Error('Token inválido.');
+    if(r.status===413) throw new Error('Archivo demasiado grande (máx 20 MB).');
+    if(!r.ok) throw new Error('Error del servidor: '+r.status);
+    return r.json();
+  })
+  .then(function(d){ showOutput(d.markdown, d.stats.original_kb, d.stats.token_estimate); })
+  .catch(function(e){ document.getElementById('convertStatus').textContent='✗ '+e.message; });
+}
+
+/* SHOW OUTPUT + IMPACT */
+function showOutput(md, kb, tokEst){
+  currentMarkdown = md;
+  document.getElementById('convertStatus').classList.remove('on');
+  document.getElementById('outputBox').classList.add('on');
+  document.getElementById('outputLabel').textContent = currentFileName+'.md';
+  document.getElementById('outputContent').textContent = md;
+
+  // Tokens: markdown contados reales, original estimado desde KB
+  var mdTok   = tokEst || Math.round(md.length / 4);
+  var origTok = Math.round((kb || 50) * 500);
+  var saved   = Math.max(0, origTok - mdTok);
+  var pct     = origTok > 0 ? Math.round((saved / origTok) * 100) : 0;
+  var convs   = Math.round(saved / TOK_PER_CONV);
+  var ratio   = origTok > 0 ? (mdTok / origTok) : 0.5;
+
+  savedTokGlobal = saved;
+
+  // Barras
+  document.getElementById('ibRawLbl').textContent = fmt(origTok)+' tokens';
+  document.getElementById('ibMdLbl').textContent  = fmt(mdTok)+' tokens';
+  document.getElementById('ibMdBar').style.width  = (Math.min(ratio,1)*100)+'%';
+
+  // Stats
+  document.getElementById('isSaved').textContent = fmt(saved);
+  document.getElementById('isPct').textContent   = pct > 0 ? '−'+pct+'%' : '~0%';
+  document.getElementById('isConvs').textContent = convs > 0 ? '+'+convs : '~0';
+
+  // Titular de impacto — el marco de referencia correcto
+  var msg, sub;
+  if(pct >= 55){
+    msg = 'Liberaste <strong>'+fmt(saved)+' tokens</strong> — el equivalente a <strong>'+convs+' conversaciones completas</strong> con Claude.';
+    sub = '// ese contexto recuperado es tuyo para usarlo donde de verdad importa';
+  } else if(pct >= 30){
+    msg = '<strong>'+fmt(saved)+' tokens liberados</strong> con este archivo. Claude ahora trabaja con <strong>'+pct+'% menos ruido</strong>.';
+    sub = '// '+convs+' conversaciones extra recuperadas · escala abajo para ver el impacto mensual';
+  } else if(pct > 0){
+    msg = 'Este archivo ya era bastante limpio. Aún así liberaste <strong>'+fmt(saved)+' tokens</strong>.';
+    sub = '// el mayor impacto está en PDFs complejos, presentaciones y Excel — prueba con esos';
+  } else {
+    msg = 'No se detectó ahorro significativo en este archivo.';
+    sub = '// puede que el archivo fuera texto plano o ya estuviera optimizado';
+  }
+  document.getElementById('impactMsg').innerHTML = msg;
+  document.getElementById('impactSub').textContent = sub;
+
+  // Mostrar panel
+  document.getElementById('impactPanel').classList.add('on');
+  document.getElementById('calcToggle').classList.add('on');
+  updateScale();
+}
+
+/* SCALE SLIDER */
+function updateScale(){
+  if(savedTokGlobal === 0) return;
+  var docs = parseInt(document.getElementById('docsSlider').value);
+  document.getElementById('sliderVal').textContent = docs+' doc'+(docs>1?'s':'')+'/mes';
+  var monthSaved = savedTokGlobal * docs;
+  var monthConvs = Math.round(monthSaved / TOK_PER_CONV);
+  document.getElementById('monthTokens').textContent = fmt(monthSaved);
+  document.getElementById('monthConvs').textContent  = '+'+fmt(monthConvs);
+  document.getElementById('monthFiles').textContent  = docs;
+}
+
+/* CONVERTERS */
+function convertPDF(f){
+  var kb=f.size/1024, r=new FileReader();
+  r.onload=function(e){
+    pdfjsLib.getDocument(new Uint8Array(e.target.result)).promise.then(function(pdf){
+      var pages=[],total=pdf.numPages,done=0;
+      for(var i=1;i<=total;i++){(function(n){pdf.getPage(n).then(function(p){p.getTextContent().then(function(tc){
+        pages[n-1]='## Página '+n+'\n\n'+tc.items.map(function(it){return it.str}).join(' ').trim();
+        if(++done===total) showOutput('# '+currentFileName+'\n\n'+pages.join('\n\n---\n\n'),kb);
+      })})})(i)}
+    }).catch(function(){ document.getElementById('convertStatus').textContent='✗ PDF no compatible (escaneado). Prueba con PRO.'; });
+  };
+  r.readAsArrayBuffer(f);
+}
+function convertDOCX(f){
+  var kb=f.size/1024, r=new FileReader();
+  r.onload=function(e){ mammoth.extractRawText({arrayBuffer:e.target.result}).then(function(res){
+    showOutput('# '+currentFileName+'\n\n'+res.value.split('\n').filter(function(l){return l.trim()}).join('\n\n'),kb);
+  })};
+  r.readAsArrayBuffer(f);
+}
+function convertCSV(f){
+  var kb=f.size/1024, r=new FileReader();
+  r.onload=function(e){
+    var lines=e.target.result.split('\n').filter(function(l){return l.trim()});
+    if(!lines.length){showOutput('',kb);return}
+    var h=lines[0].split(',').map(function(c){return c.trim().replace(/"/g,'')});
+    var md='# '+currentFileName+'\n\n| '+h.join(' | ')+' |\n| '+h.map(function(){return'---'}).join(' | ')+' |\n';
+    for(var i=1;i<lines.length;i++){var c=lines[i].split(',').map(function(x){return x.trim().replace(/"/g,'')});md+='| '+c.join(' | ')+' |\n'}
+    showOutput(md,kb);
+  };
+  r.readAsText(f,'UTF-8');
+}
+function convertHTML(f){
+  var kb=f.size/1024, r=new FileReader();
+  r.onload=function(e){
+    var doc=(new DOMParser()).parseFromString(e.target.result,'text/html');
+    doc.querySelectorAll('script,style,nav,footer,header').forEach(function(el){el.remove()});
+    var text=doc.body?doc.body.innerText||doc.body.textContent:e.target.result;
+    showOutput('# '+currentFileName+'\n\n'+text.split('\n').map(function(l){return l.trim()}).filter(Boolean).join('\n\n'),kb);
+  };
+  r.readAsText(f,'UTF-8');
+}
+function convertText(f){
+  var kb=f.size/1024, r=new FileReader();
+  r.onload=function(e){showOutput(e.target.result,kb)};
+  r.readAsText(f,'UTF-8');
+}
+
+/* COPY / DOWNLOAD */
+function copyMarkdown(){
+  if(!currentMarkdown) return;
+  navigator.clipboard.writeText(currentMarkdown).then(function(){
+    var btn=document.getElementById('copyBtn'), orig=btn.innerHTML;
+    btn.innerHTML='<i class="ti ti-check"></i>copiado';
+    setTimeout(function(){btn.innerHTML=orig},1800);
+  });
+}
+function downloadMarkdown(){
+  if(!currentMarkdown) return;
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([currentMarkdown],{type:'text/markdown'}));
+  a.download=currentFileName+'.md'; a.click();
+}
+
+// Restaurar token
+if(proToken && document.getElementById('proTokenInput')){
+  document.getElementById('proTokenInput').value=proToken;
+}
+</script>
+</body>
+</html>
