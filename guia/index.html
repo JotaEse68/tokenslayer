@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cómo no quemar tokens como un idiota · by Jota!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --bg2: #0f0f18;
+  --bg3: #141420;
+  --green: #00e896;
+  --green-dim: rgba(0,232,150,0.12);
+  --green-mid: rgba(0,232,150,0.25);
+  --blue: #2060d0;
+  --gold: #f0b020;
+  --red: #e04040;
+  --text: #eeeef5;
+  --soft: rgba(238,238,245,0.6);
+  --muted: rgba(238,238,245,0.3);
+  --border: rgba(238,238,245,0.08);
+  --serif: 'Playfair Display', Georgia, serif;
+  --sans: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ── GRAIN TEXTURE ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: 0.4;
+}
+
+/* ── PROGRESS BAR ── */
+.progress-bar {
+  position: fixed; top: 0; left: 0; height: 2px;
+  background: var(--green); width: 0%;
+  transition: width 0.1s; z-index: 999;
+  box-shadow: 0 0 12px var(--green);
+}
+
+/* ── PORTADA ── */
+.cover {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: clamp(40px,8vw,100px) clamp(24px,6vw,80px);
+  position: relative; z-index: 1;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,232,150,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 80%, rgba(32,96,208,0.06) 0%, transparent 55%),
+    var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.cover-inner { max-width: 960px; margin: 0 auto; }
+.cover-split {
+  display: grid; grid-template-columns: 340px 1fr;
+  gap: 60px; align-items: center;
+}
+.cover-book { display: flex; align-items: center; justify-content: center; }
+.book-img {
+  width: 100%; max-width: 320px;
+  filter: drop-shadow(0 40px 80px rgba(0,232,150,0.15)) drop-shadow(0 20px 40px rgba(0,0,0,0.8));
+  animation: bookFloat 4s ease-in-out infinite;
+}
+@keyframes bookFloat {
+  0%,100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-12px) rotate(1deg); }
+}
+.cover-text { display: flex; flex-direction: column; gap: 0; }
+.cover-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 32px; }
+.btn-read {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 13px 28px; border-radius: 999px;
+  background: var(--green); color: #000;
+  font-family: var(--sans); font-size: 14px; font-weight: 600;
+  text-decoration: none; letter-spacing: 0.01em;
+  box-shadow: 0 0 32px rgba(0,232,150,0.35);
+  transition: all 0.24s;
+}
+.btn-read:hover { background: #00ffaa; transform: translateY(-2px); box-shadow: 0 0 48px rgba(0,232,150,0.55); }
+.btn-download-cover {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 13px 24px; border-radius: 999px;
+  background: transparent; color: var(--soft);
+  font-family: var(--sans); font-size: 14px; font-weight: 500;
+  text-decoration: none; letter-spacing: 0.01em;
+  border: 1px solid var(--border);
+  transition: all 0.24s; cursor: pointer;
+}
+.btn-download-cover:hover { border-color: var(--green); color: var(--green); transform: translateY(-2px); }
+.cover-tag {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--green);
+  background: var(--green-dim); border: 1px solid var(--green-mid);
+  border-radius: 999px; padding: 5px 16px;
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-bottom: 36px;
+}
+.cover-tag::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 8px var(--green);
+  animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+.cover h1 {
+  font-family: var(--serif);
+  font-size: clamp(38px,7vw,80px);
+  font-weight: 900; line-height: 1.0;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 28px;
+}
+.cover h1 em {
+  font-style: italic; color: var(--green);
+  text-shadow: 0 0 60px rgba(0,232,150,0.3);
+}
+.cover-sub {
+  font-size: clamp(16px,2vw,20px);
+  color: var(--soft); line-height: 1.7;
+  max-width: 580px; margin-bottom: 52px;
+}
+.cover-sub strong { color: var(--text); }
+.cover-meta {
+  display: flex; align-items: center; gap: 20px;
+  flex-wrap: wrap;
+  padding-top: 36px; border-top: 1px solid var(--border);
+}
+.cover-author {
+  font-family: var(--serif); font-size: 18px; font-weight: 700;
+  color: var(--text);
+}
+.cover-author em { color: var(--green); font-style: italic; }
+.cover-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted);
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 4px 12px;
+}
+
+/* ── NAV ÍNDICE ── */
+.toc {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 32px clamp(24px,6vw,80px);
+  position: relative;
+}
+.toc-inner { max-width: 760px; margin: 0 auto; }
+.toc-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 12px;
+}
+.toc-links {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.toc-link {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted);
+  text-decoration: none; padding: 4px 12px;
+  border: 1px solid var(--border); border-radius: 999px;
+  transition: all 0.2s;
+}
+.toc-link:hover { color: var(--green); border-color: var(--green-mid); }
+
+/* ── CAPÍTULOS ── */
+.chapter {
+  max-width: 760px; margin: 0 auto;
+  padding: clamp(60px,8vw,100px) clamp(24px,6vw,80px);
+  border-bottom: 1px solid var(--border);
+  position: relative; z-index: 1;
+}
+.chapter-num {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--green);
+  margin-bottom: 16px; display: block;
+}
+.chapter h2 {
+  font-family: var(--serif);
+  font-size: clamp(26px,4vw,42px);
+  font-weight: 900; line-height: 1.12;
+  letter-spacing: -0.025em; color: var(--text);
+  margin-bottom: 32px;
+}
+.chapter h2 em { font-style: italic; color: var(--green); }
+.chapter p { color: var(--soft); margin-bottom: 20px; }
+.chapter p strong { color: var(--text); }
+.chapter p em { color: var(--green); font-style: normal; }
+
+/* ── ELEMENTOS ESPECIALES ── */
+.callout {
+  background: var(--bg3); border-left: 3px solid var(--green);
+  border-radius: 0 12px 12px 0; padding: 20px 24px;
+  margin: 28px 0; font-size: 15px; color: var(--soft);
+  line-height: 1.7;
+}
+.callout strong { color: var(--text); }
+.callout.red { border-color: var(--red); }
+.callout.gold { border-color: var(--gold); }
+.callout.blue { border-color: var(--blue); }
+
+.prompt-box {
+  background: rgba(32,96,208,0.07);
+  border: 1px solid rgba(32,96,208,0.2);
+  border-radius: 12px; padding: 22px 24px;
+  margin: 28px 0;
+  position: relative; overflow: hidden;
+}
+.prompt-box::before {
+  content: '💬 PROMPT LISTO PARA COPIAR';
+  display: block;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--blue);
+  margin-bottom: 12px;
+}
+.prompt-box code {
+  font-family: var(--mono); font-size: 14px;
+  color: #a0c0ff; line-height: 1.75;
+  display: block; white-space: pre-wrap;
+}
+.copy-btn {
+  position: absolute; top: 16px; right: 16px;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--blue);
+  background: rgba(32,96,208,0.12); border: 1px solid rgba(32,96,208,0.25);
+  border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  transition: all 0.2s;
+}
+.copy-btn:hover { background: rgba(32,96,208,0.25); }
+
+.verdict {
+  background: linear-gradient(135deg, rgba(0,232,150,0.07), rgba(32,96,208,0.05));
+  border: 1px solid var(--green-mid); border-radius: 12px;
+  padding: 24px 26px; margin: 32px 0;
+}
+.verdict-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--green); margin-bottom: 10px;
+}
+.verdict p { color: var(--text); font-size: 15px; margin: 0; line-height: 1.7; }
+
+.data-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; margin: 28px 0;
+}
+.data-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px 20px;
+}
+.data-card .label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.data-card .value {
+  font-family: var(--serif); font-size: 28px; font-weight: 700;
+  line-height: 1; letter-spacing: -0.03em;
+}
+.data-card .value.red { color: var(--red); }
+.data-card .value.green { color: var(--green); }
+.data-card .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+.checklist { list-style: none; margin: 20px 0; }
+.checklist li {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  font-size: 15px; color: var(--soft); line-height: 1.55;
+}
+.checklist li:last-child { border-bottom: none; }
+.checklist li::before {
+  content: '✓'; color: var(--green); font-weight: 700;
+  flex-shrink: 0; margin-top: 1px;
+}
+.checklist li strong { color: var(--text); }
+
+.bad-good {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; margin: 28px 0;
+}
+.bg-card {
+  border-radius: 10px; padding: 18px 20px;
+}
+.bg-card.bad {
+  background: rgba(224,64,64,0.07); border: 1px solid rgba(224,64,64,0.18);
+}
+.bg-card.good {
+  background: rgba(0,232,150,0.06); border: 1px solid var(--green-mid);
+}
+.bg-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; margin-bottom: 10px; font-weight: 700;
+}
+.bg-card.bad .bg-label { color: var(--red); }
+.bg-card.good .bg-label { color: var(--green); }
+.bg-card p { font-size: 14px; color: var(--soft); line-height: 1.65; margin: 0; }
+.bg-card code { font-family: var(--mono); font-size: 13px; }
+
+.divider {
+  height: 1px; background: var(--border);
+  margin: 36px 0;
+}
+
+/* ── PÁGINA FINAL — PICOS Y PALAS ── */
+.final-page {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,232,150,0.07) 0%, transparent 60%),
+    var(--bg2);
+  position: relative; z-index: 1;
+  border-top: 1px solid var(--border);
+}
+.final-inner {
+  max-width: 760px; margin: 0 auto;
+  padding: clamp(70px,8vw,120px) clamp(24px,6vw,80px);
+}
+.final-kicker {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--gold);
+  background: rgba(240,176,32,0.08); border: 1px solid rgba(240,176,32,0.2);
+  border-radius: 999px; padding: 5px 16px;
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-bottom: 32px;
+}
+.final-page h2 {
+  font-family: var(--serif);
+  font-size: clamp(30px,5vw,54px);
+  font-weight: 900; line-height: 1.08;
+  letter-spacing: -0.03em; color: var(--text);
+  margin-bottom: 28px;
+}
+.final-page h2 em { font-style: italic; color: var(--gold); }
+.final-page p { color: var(--soft); margin-bottom: 20px; }
+.final-page p strong { color: var(--text); }
+
+.trio-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 12px; margin: 36px 0;
+}
+.trio-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px 18px;
+  position: relative; overflow: hidden;
+}
+.trio-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.trio-name {
+  font-family: var(--serif); font-size: 16px; font-weight: 700;
+  color: var(--gold); margin-bottom: 6px; letter-spacing: -0.02em;
+}
+.trio-what {
+  font-size: 12px; color: var(--muted); margin-bottom: 10px;
+  font-family: var(--mono); letter-spacing: 0.04em;
+}
+.trio-result {
+  font-size: 13px; color: var(--soft); line-height: 1.6;
+}
+.trio-result strong { color: var(--text); }
+
+.parallelo-box {
+  background: linear-gradient(135deg, rgba(240,176,32,0.08), rgba(0,232,150,0.05));
+  border: 1px solid rgba(240,176,32,0.25);
+  border-radius: 16px; padding: 28px 28px;
+  margin: 36px 0; position: relative; overflow: hidden;
+}
+.parallelo-box::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), var(--green), transparent);
+}
+.parallelo-grid {
+  display: grid; grid-template-columns: 1fr 48px 1fr;
+  gap: 16px; align-items: center;
+}
+.parallelo-col { display: flex; flex-direction: column; gap: 10px; }
+.para-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+.para-label.then { color: var(--gold); }
+.para-label.now { color: var(--green); }
+.para-item {
+  font-size: 13.5px; color: var(--soft); padding: 8px 12px;
+  background: rgba(255,255,255,0.03); border-radius: 8px;
+  border: 1px solid var(--border); line-height: 1.5;
+}
+.para-item strong { color: var(--text); }
+.para-vs {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-size: 11px; font-weight: 700;
+  color: var(--muted); writing-mode: vertical-rl; letter-spacing: 0.2em;
+}
+
+/* BOX KIT CTA */
+.boxkit-cta {
+  background: linear-gradient(135deg, rgba(32,96,208,0.1), rgba(0,232,150,0.06));
+  border: 1px solid rgba(32,96,208,0.28);
+  border-radius: 20px; padding: 36px 32px;
+  margin-top: 52px; position: relative; overflow: hidden;
+}
+.boxkit-cta::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--blue), var(--green), transparent);
+}
+.boxkit-cta h3 {
+  font-family: var(--serif); font-size: clamp(22px,3vw,32px);
+  font-weight: 900; letter-spacing: -0.03em; color: var(--text);
+  margin-bottom: 14px; line-height: 1.15;
+}
+.boxkit-cta h3 em { font-style: italic; color: var(--green); }
+.boxkit-cta p { font-size: 15px; color: var(--soft); line-height: 1.75; margin-bottom: 12px; }
+.boxkit-cta p strong { color: var(--text); }
+.cta-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 24px; }
+.btn-cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 28px; border-radius: 999px;
+  background: var(--blue); color: #fff;
+  font-family: var(--sans); font-size: 13px; font-weight: 600;
+  letter-spacing: 0.03em; text-decoration: none;
+  box-shadow: 0 0 32px rgba(32,96,208,0.3);
+  transition: all 0.24s;
+}
+.btn-cta:hover { background: #3070e0; transform: translateY(-2px); box-shadow: 0 0 48px rgba(32,96,208,0.5); }
+.cta-note { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+.price-tag {
+  font-family: var(--serif); font-size: 32px; font-weight: 700;
+  color: var(--blue); letter-spacing: -0.04em; line-height: 1;
+}
+
+/* FIRMA FINAL */
+.firma {
+  max-width: 760px; margin: 0 auto;
+  padding: 48px clamp(24px,6vw,80px);
+  text-align: center; position: relative; z-index: 1;
+  border-top: 1px solid var(--border);
+}
+.firma-text {
+  font-family: var(--serif); font-size: 18px; font-style: italic;
+  color: var(--soft); margin-bottom: 12px;
+}
+.firma-name {
+  font-family: var(--serif); font-size: 20px; font-weight: 700;
+  color: var(--green);
+}
+.firma-sub { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 6px; letter-spacing: 0.08em; }
+
+@media (max-width: 800px) {
+  .cover-split { grid-template-columns: 1fr; gap: 36px; }
+  .cover-book { order: -1; }
+  .book-img { max-width: 240px; }
+}
+@media (max-width: 640px) {
+  .data-row, .bad-good, .trio-grid { grid-template-columns: 1fr; }
+  .parallelo-grid { grid-template-columns: 1fr; }
+  .para-vs { writing-mode: horizontal-tb; padding: 8px; }
+  .toc { display: none; }
+  .cover-actions { flex-direction: column; }
+  .btn-read, .btn-download-cover { width: 100%; justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- BOTÓN FLOTANTE DESCARGA PDF -->
+<div id="floatDl" style="
+  position:fixed; bottom:24px; right:24px; z-index:500;
+  display:flex; align-items:center; gap:8px;
+  background:var(--bg3); border:1px solid var(--green-mid);
+  border-radius:999px; padding:10px 20px;
+  font-family:var(--mono); font-size:11px; letter-spacing:0.08em;
+  text-transform:uppercase; color:var(--green);
+  cursor:pointer; box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  transition:all 0.2s; opacity:0; pointer-events:none;
+" onclick="downloadPDF()">
+  <span>↓</span> Descargar PDF
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PORTADA
+════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-inner">
+    <div class="cover-split">
+      <!-- PORTADA 3D -->
+      <div class="cover-book">
+        <img src="https://Aka625.b-cdn.net/tokens%20slayers/portada%20ebook%20com%20no%20quemar%20tokens%20com%20un%20idiota.png"
+          alt="Cómo no quemar tokens como un idiota — by Jota!"
+          class="book-img">
+      </div>
+      <!-- TEXTO -->
+      <div class="cover-text">
+        <div class="cover-tag">Guía gratuita · TokenSlayer</div>
+        <h1>Cómo no quemar tokens<br><em>como un idiota.</em></h1>
+        <p class="cover-sub">
+          Todo el mundo habla de optimizar la IA. Casi nadie te explica por qué
+          estás tirando entre un 30% y un 60% de tu dinero cada vez que subes un documento.
+          <strong>Esto lo arregla. Y es gratis.</strong>
+        </p>
+        <div class="cover-actions">
+          <a href="#cap1" class="btn-read">Leer ahora →</a>
+          <a href="#" onclick="downloadPDF()" class="btn-download-cover">
+            ↓ Descargar PDF
+          </a>
+        </div>
+        <div class="cover-meta">
+          <div class="cover-author">by <em>Jota!</em></div>
+          <div class="cover-pills">
+            <span class="pill">7 capítulos</span>
+            <span class="pill">Prompts incluidos</span>
+            <span class="pill">Sin relleno</span>
+            <span class="pill">Gratis · compártelo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="toc">
+  <div class="toc-inner">
+    <div class="toc-label">Capítulos</div>
+    <div class="toc-links">
+      <a href="#cap1" class="toc-link">01 · El PDF traicionero</a>
+      <a href="#cap2" class="toc-link">02 · El olvido de Claude</a>
+      <a href="#cap3" class="toc-link">03 · El orden importa</a>
+      <a href="#cap4" class="toc-link">04 · Prompts rotos</a>
+      <a href="#cap5" class="toc-link">05 · Flujo real</a>
+      <a href="#cap6" class="toc-link">06 · Cuándo NO usar Markdown</a>
+      <a href="#cap7" class="toc-link">07 · Tu setup</a>
+      <a href="#final" class="toc-link" style="color:var(--gold);border-color:rgba(240,176,32,0.3)">⚡ La oportunidad</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     CAP 1
+════════════════════════════════════════════════ -->
+<div class="chapter" id="cap1">
+  <span class="chapter-num">Capítulo 01</span>
+  <h2>El PDF que te costó<br><em>el doble sin que lo supieras.</em></h2>
+
+  <p>Hice el experimento. Cogí el mismo contrato de 40 páginas y lo subí a Claude de dos formas: primero en PDF tal cual, luego convertido a Markdown con TokenSlayer. Mismo documento, misma pregunta, mismos modelos.</p>
+
+  <p>Los resultados me cabrearon un poco, porque llevaba meses haciéndolo mal sin saberlo.</p>
+
+  <div class="data-row">
+    <div class="data-card">
+      <div class="label">PDF sin convertir</div>
+      <div class="value red">~18.400</div>
+      <div class="sub">tokens consumidos</div>
+    </div>
+    <div class="data-card">
+      <div class="label">Mismo doc en Markdown</div>
+      <div class="value green">~7.200</div>
+      <div class="sub">tokens consumidos</div>
+    </div>
+  </div>
+
+  <p>Eso es un <strong>61% menos</strong>. En un solo documento. Multiplícalo por todos los PDFs que procesas en un mes y ya tienes el número que no quieres ver.</p>
+
+  <p>Pero lo peor no son los tokens. Lo peor es que <strong>Claude entendió cosas distintas en cada versión.</strong> Con el PDF, se inventó dos fechas que no existían en el contrato. Con el Markdown, las identificó todas correctas. El mismo modelo. La misma pregunta. Resultados diferentes.</p>
+
+  <div class="callout red">
+    <strong>Por qué pasa esto:</strong> cuando Claude recibe un PDF, está procesando la representación visual del texto — capas de metadatos, coordenadas de píxeles, codificación de fuentes. Es como pedirle que lea un libro a través de un cristal esmerilado. Puede, pero le cuesta el doble y a veces malinterpreta lo que ve.
+  </div>
+
+  <p>El Markdown es texto limpio con estructura semántica. Claude no tiene que adivinar qué es un título y qué es un párrafo — ya está marcado. Gasta todos sus tokens en entender el contenido, no en descifrar el formato.</p>
+
+  <div class="verdict">
+    <div class="verdict-label">✓ El protocolo</div>
+    <p>Antes de subir cualquier documento a Claude: convierte primero. TokenSlayer, cualquier conversor, lo que sea. Nunca subas un PDF sin convertir si puedes evitarlo. El tiempo que tardas en convertir son 10 segundos. El ahorro puede ser del 60%.</p>
+  </div>
+
+  <div class="prompt-box">
+    <button class="copy-btn" onclick="copyPrompt(this)">copiar</button>
+    <code>Aquí el contenido de [nombre del documento]:
+
+[PEGA EL MARKDOWN AQUÍ]
+
+Necesito que [tu pregunta específica]. Cita la sección exacta del documento cuando uses información de él.</code>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     CAP 2
+════════════════════════════════════════════════ -->
+<div class="chapter" id="cap2">
+  <span class="chapter-num">Capítulo 02</span>
+  <h2>Por qué Claude "se olvida"<br><em>a mitad de documento.</em></h2>
+
+  <p>Has subido un informe largo. Le has hecho varias preguntas. Y en un momento dado Claude te responde algo que contradice lo que dijiste tres mensajes antes, o simplemente ignora información que estaba claramente en el documento.</p>
+
+  <p>No está roto. No es un bug. Es la ventana de contexto, y entenderla cambia completamente cómo trabajas con la IA.</p>
+
+  <div class="callout blue">
+    <strong>Qué es la ventana de contexto:</strong> Claude tiene una memoria de trabajo limitada. Todo lo que "ve" en una conversación — tus mensajes, sus respuestas, los documentos que pegas — ocupa espacio en esa ventana. Cuando se llena, lo más antiguo empieza a pesar menos o directamente desaparece de su atención.
+  </div>
+
+  <p>La analogía que más me gusta: imagina que contratas a alguien muy inteligente pero que solo puede tener 200 páginas encima de la mesa al mismo tiempo. Si le das 250, las últimas 50 se caen al suelo y no las ve. No es que sea idiota — es que la mesa tiene un límite.</p>
+
+  <p>El problema real no es que la ventana sea limitada. El problema es que <strong>la mayoría de la gente la llena de basura antes de llegar a lo importante.</strong></p>
+
+  <p>Cada vez que dices "hola", cada vez que corriges algo con un mensaje largo, cada vez que pegas el mismo documento dos veces porque no obtuviste la respuesta que querías — todo eso ocupa contexto. Y cuando llegas a la pregunta que de verdad importa, Claude está trabajando con la mesa medio llena.</p>
+
+  <div class="verdict">
+    <div class="verdict-label">✓ El protocolo</div>
+    <p><strong>Regla 1:</strong> Una conversación, un objetivo. No uses el mismo chat para cosas distintas.<br><br>
+    <strong>Regla 2:</strong> El documento va primero, las preguntas después. Nunca al revés.<br><br>
+    <strong>Regla 3:</strong> Si el documento supera 4.000 palabras, dile a Claude que espere. Divide en bloques y avisa cuando hayas terminado de pegar.</p>
+  </div>
+
+  <div class="prompt-box">
+    <button class="copy-btn" onclick="copyPrompt(this)">copiar</button>
+    <code>Voy a enviarte un documento en [X] partes. No respondas hasta que yo diga "LISTO". Cuando lo diga, responde a esta pregunta: [tu pregunta].
+
+Parte 1 de [X]:
+[BLOQUE DEL DOCUMENTO]</code>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     CAP 3
+════════════════════════════════════════════════ -->
+<div class="chapter" id="cap3">
+  <span class="chapter-num">Capítulo 03</span>
+  <h2>El orden importa más<br><em>que el contenido.</em></h2>
+
+  <p>Claude lee como tú. Lo que aparece primero pesa más. Lo que aparece al final, menos. Esto no es opinión — es cómo funcionan los transformers. Y la mayoría de la gente lo ignora completamente.</p>
+
+  <p>El error más común que veo: alguien pega un documento de 20 páginas y al final escribe "¿puedes resumir esto y decirme qué riesgos hay?". Claude ha procesado 20 páginas de contexto antes de llegar a la instrucción. Ya ha formado una opinión sobre el documento. Tu pregunta llega tarde.</p>
+
+  <div class="bad-good">
+    <div class="bg-card bad">
+      <div class="bg-label">✕ Así lo hace casi todo el mundo</div>
+      <p>[20 páginas de documento]<br><br>¿Puedes analizarlo y decirme qué riesgos hay?</p>
+    </div>
+    <div class="bg-card good">
+      <div class="bg-label">✓ Así funciona de verdad</div>
+      <p>Analiza el siguiente documento e identifica los 3 riesgos principales. Cuando termines, cita el párrafo exacto de cada riesgo.<br><br>[documento aquí]</p>
+    </div>
+  </div>
+
+  <p>La diferencia es que en el segundo caso, <strong>Claude sabe qué buscar antes de leer.</strong> No está descubriendo el objetivo mientras lee — está leyendo con el objetivo ya en mente. El resultado es más preciso y usa menos tokens porque no necesita "releer" mentalmente para encontrar lo que pediste.</p>
+
+  <div class="callout">
+    <strong>El truco del ancla:</strong> antes de pegar cualquier documento largo, escribe una sola frase que describa exactamente qué necesitas. No el documento — la tarea. Esa frase es el ancla que guía todo lo que viene después.
+  </div>
+
+  <div class="verdict">
+    <div class="verdict-label">✓ El protocolo de 3 líneas</div>
+    <p><strong>Línea 1:</strong> La tarea exacta (qué quieres que haga).<br>
+    <strong>Línea 2:</strong> El formato de salida (cómo quieres la respuesta).<br>
+    <strong>Línea 3:</strong> El documento.<br><br>
+    En ese orden. Siempre.</p>
+  </div>
+
+  <div class="prompt-box">
+    <button class="copy-btn" onclick="copyPrompt(this)">copiar</button>
+    <code>Tarea: identifica todas las cláusulas que limiten mi responsabilidad como proveedor.
+Formato: lista numerada con cita literal de cada cláusula y una explicación de 2 líneas.
+Documento:
+
+[EL DOCUMENTO AQUÍ]</code>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     CAP 4
+════════════════════════════════════════════════ -->
+<div class="chapter" id="cap4">
+  <span class="chapter-num">Capítulo 04</span>
+  <h2>Prompts que no funcionan<br><em>y por qué.</em></h2>
+
+  <p>Hay cinco prompts que todo el mundo usa. Y los cinco tienen un problema que nadie te ha explicado. No es que sean malos — es que son ambiguos, y la ambigüedad le cuesta tokens a Claude y resultados a ti.</p>
+
+  <div class="divider"></div>
+
+  <div class="bad-good">
+    <div class="bg-card bad">
+      <div class="bg-label">✕ Prompt roto #1</div>
+      <p><code>"Resume este documento"</code><br><br>¿Cuántas palabras? ¿Para quién? ¿Qué aspectos? Claude adivina. A veces acierta. Muchas veces no.</p>
+    </div>
+    <div class="bg-card good">
+      <div class="bg-label">✓ La versión que funciona</div>
+      <p><code>"Resume en máximo 150 palabras los puntos clave para un director que no ha leído el documento."</code></p>
+    </div>
+  </div>
+
+  <div class="bad-good">
+    <div class="bg-card bad">
+      <div class="bg-label">✕ Prompt roto #2</div>
+      <p><code>"Analiza esto"</code><br><br>El prompt más inútil que existe. Analizar qué, cómo, para qué propósito.</p>
+    </div>
+    <div class="bg-card good">
+      <div class="bg-label">✓ La versión que funciona</div>
+      <p><code>"Analiza los riesgos legales para el proveedor. Usa un semáforo: rojo/amarillo/verde por nivel de riesgo."</code></p>
+    </div>
+  </div>
+
+  <div class="bad-good">
+    <div class="bg-card bad">
+      <div class="bg-label">✕ Prompt roto #3</div>
+      <p><code>"Mejora este texto"</code><br><br>Claude reescribe todo. Pierdes tu voz. Y probablemente no era eso lo que querías.</p>
+    </div>
+    <div class="bg-card good">
+      <div class="bg-label">✓ La versión que funciona</div>
+      <p><code>"Corrige solo los errores gramaticales y mejora la claridad sin cambiar el tono ni el vocabulario. Marca en negrita cada cambio."</code></p>
+    </div>
+  </div>
+
+  <div class="bad-good">
+    <div class="bg-card bad">
+      <div class="bg-label">✕ Prompt roto #4</div>
+      <p><code>"¿Qué opinas de este contrato?"</code><br><br>Claude opina en general. Inútil. Demasiado vago para ser accionable.</p>
+    </div>
+    <div class="bg-card good">
+      <div class="bg-label">✓ La versión que funciona</div>
+      <p><code>"Desde la perspectiva del proveedor, ¿qué 3 cláusulas cambiarías y por qué? Sé específico."</code></p>
+    </div>
+  </div>
+
+  <div class="bad-good">
+    <div class="bg-card bad">
+      <div class="bg-label">✕ Prompt roto #5</div>
+      <p><code>"Dame ideas"</code><br><br>Recibes una lista genérica de 10 puntos que podrían aplicarse a cualquier cosa del universo.</p>
+    </div>
+    <div class="bg-card good">
+      <div class="bg-label">✓ La versión que funciona</div>
+      <p><code>"Dame 5 ideas específicas para [contexto concreto]. Para cada una: nombre, cómo se implementa en 2 semanas y qué resultado mide el éxito."</code></p>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <div class="verdict-label">✓ La regla universal</div>
+    <p>Todo prompt tiene que responder tres preguntas antes de enviarlo: <strong>¿qué quiero?</strong> (tarea), <strong>¿cómo lo quiero?</strong> (formato), <strong>¿para qué sirve?</strong> (contexto). Si no puedes responder las tres, el prompt no está listo.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     CAP 5
+════════════════════════════════════════════════ -->
+<div class="chapter" id="cap5">
+  <span class="chapter-num">Capítulo 05</span>
+  <h2>El flujo que uso para<br><em>documentos de trabajo reales.</em></h2>
+
+  <p>Teoría sobra. Aquí va lo que hago yo con los tipos de documento que aparecen en el trabajo real. Sin adornos.</p>
+
+  <div class="divider"></div>
+
+  <h3 style="font-family:var(--serif);font-size:22px;font-weight:700;color:var(--text);margin:28px 0 14px;letter-spacing:-0.02em">Contratos y acuerdos</h3>
+  <p>Siempre en Markdown. Siempre con la tarea primero. La pregunta más útil que puedes hacer sobre un contrato no es "analízalo" — es "¿qué me puede salir caro aquí?".</p>
+  <div class="prompt-box">
+    <button class="copy-btn" onclick="copyPrompt(this)">copiar</button>
+    <code>Eres abogado. Analiza este contrato desde la perspectiva del proveedor (yo). 
+Identifica:
+1. Cláusulas que me limitan desproporcionadamente
+2. Obligaciones que no son recíprocas
+3. Condiciones de resolución que me perjudican
+
+Para cada punto: cita literal + explicación en una línea + nivel de riesgo (alto/medio/bajo).
+
+[CONTRATO EN MARKDOWN]</code>
+  </div>
+
+  <h3 style="font-family:var(--serif);font-size:22px;font-weight:700;color:var(--text);margin:28px 0 14px;letter-spacing:-0.02em">Informes y reportes</h3>
+  <p>El error aquí es pedirle que "resuma". Lo que realmente necesitas es que extraiga las conclusiones accionables — lo que tienes que hacer con esa información.</p>
+  <div class="prompt-box">
+    <button class="copy-btn" onclick="copyPrompt(this)">copiar</button>
+    <code>Lee este informe y extrae únicamente:
+- Las 3 cifras más relevantes para tomar decisiones
+- Los 2 problemas que requieren acción inmediata
+- Una recomendación concreta para esta semana
+
+Máximo 200 palabras. Sin explicaciones adicionales.
+
+[INFORME EN MARKDOWN]</code>
+  </div>
+
+  <h3 style="font-family:var(--serif);font-size:22px;font-weight:700;color:var(--text);margin:28px 0 14px;letter-spacing:-0.02em">Propuestas comerciales</h3>
+  <p>Antes de escribir una propuesta, úsalo para analizar al cliente. Si tienes sus materiales, páginas web, o documentos previos — pásalos primero.</p>
+  <div class="prompt-box">
+    <button class="copy-btn" onclick="copyPrompt(this)">copiar</button>
+    <code>Analiza este material sobre el cliente y dime:
+1. Su problema principal (el que probablemente no está diciendo en voz alta)
+2. Qué lenguaje usa para describir sus retos
+3. Qué argumento le va a convencer más
+
+Luego redacta el párrafo de apertura de una propuesta que hable directamente a ese problema.
+
+[MATERIAL DEL CLIENTE EN MARKDOWN]</code>
+  </div>
+
+  <h3 style="font-family:var(--serif);font-size:22px;font-weight:700;color:var(--text);margin:28px 0 14px;letter-spacing:-0.02em">Emails largos o complicados</h3>
+  <p>Para emails que requieren tacto, contexto o negociación — no improvises. Pásale el contexto y deja que construya el argumento.</p>
+  <div class="prompt-box">
+    <button class="copy-btn" onclick="copyPrompt(this)">copiar</button>
+    <code>Contexto: [explica la situación en 3 líneas]
+Objetivo del email: [qué quieres conseguir]
+Tono: [profesional/cercano/firme/conciliador]
+El destinatario es: [quién es y qué le importa]
+
+Redacta el email. Máximo 150 palabras. Sin frases de relleno corporativo.</code>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     CAP 6
+════════════════════════════════════════════════ -->
+<div class="chapter" id="cap6">
+  <span class="chapter-num">Capítulo 06</span>
+  <h2>Cuándo NO usar Markdown.<br><em>(Sí, existe ese caso.)</em></h2>
+
+  <p>Todo este ebook habla de convertir a Markdown. Y es la regla general correcta. Pero hay casos donde convertir empeora el resultado, y vale la pena saberlos antes de convertirlo todo por defecto.</p>
+
+  <div class="callout gold">
+    <strong>Caso 1 — Documentos con tablas complejas</strong><br>
+    Si tu Excel o Word tiene tablas con celdas fusionadas, subtotales anidados o estructura no lineal, el Markdown puede romper la lógica. Claude puede confundir filas con columnas o perder relaciones entre datos. En estos casos: describe la estructura verbalmente antes de pegar los datos, o usa CSV directamente.
+  </div>
+
+  <div class="callout gold">
+    <strong>Caso 2 — Imágenes con texto importante</strong><br>
+    Si el documento tiene gráficos, diagramas o texto embebido en imágenes, el Markdown no captura esa información. El conversor extrae solo el texto — lo visual se pierde. Solución: sube la imagen directamente a Claude (tiene visión) o describe el contenido visual manualmente antes de pegar el Markdown.
+  </div>
+
+  <div class="callout gold">
+    <strong>Caso 3 — Documentos donde el formato ES el contenido</strong><br>
+    Un contrato con márgenes específicos, un certificado, una factura donde la posición de los elementos tiene valor legal — en estos casos el Markdown aplana algo que no debería aplanarse. Úsalo para análisis de contenido, pero guarda el original para cualquier uso formal.
+  </div>
+
+  <div class="callout gold">
+    <strong>Caso 4 — Texto muy corto</strong><br>
+    Si el documento tiene menos de 500 palabras, el ahorro de tokens por convertir es mínimo y el tiempo de conversión no vale la pena. Copia y pega directamente.
+  </div>
+
+  <div class="verdict">
+    <div class="verdict-label">✓ La regla rápida</div>
+    <p>¿El documento tiene más de 500 palabras y es principalmente texto? Convierte. ¿Tiene tablas complejas, imágenes con datos, o el formato importa legalmente? Evalúa caso a caso. La conversión es una herramienta, no una religión.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     CAP 7
+════════════════════════════════════════════════ -->
+<div class="chapter" id="cap7">
+  <span class="chapter-num">Capítulo 07</span>
+  <h2>Tu setup de 10 minutos.<br><em>Configúralo una vez, úsalo siempre.</em></h2>
+
+  <p>Todo lo anterior son principios. Esto es el sistema. Monta esto una vez y no tienes que pensar en tokens nunca más — el flujo lo hace solo.</p>
+
+  <div class="divider"></div>
+
+  <h3 style="font-family:var(--serif);font-size:20px;font-weight:700;color:var(--text);margin:24px 0 12px">Paso 1 — El flujo de conversión</h3>
+  <ul class="checklist">
+    <li><strong>TokenSlayer en un tab fijo del navegador.</strong> No lo cierres. Tenerlo abierto elimina la fricción que hace que la gente se salte el paso.</li>
+    <li><strong>Arrastra, convierte, copia.</strong> 10 segundos. Si tarda más, algo falla en tu flujo.</li>
+    <li><strong>Nunca copies el original</strong> cuando tengas el Markdown. Si tienes que elegir uno, es el Markdown.</li>
+  </ul>
+
+  <h3 style="font-family:var(--serif);font-size:20px;font-weight:700;color:var(--text);margin:24px 0 12px">Paso 2 — Tus prompts base guardados</h3>
+  <p>Crea un documento (Notion, Notes, lo que uses) con tus 5 prompts más frecuentes ya escritos. No improvises el prompt cada vez — ajusta una plantilla que ya funciona.</p>
+  <ul class="checklist">
+    <li><strong>Prompt de análisis de contratos</strong> — del capítulo 5</li>
+    <li><strong>Prompt de resumen ejecutivo</strong> — del capítulo 5</li>
+    <li><strong>Prompt de email difícil</strong> — del capítulo 5</li>
+    <li><strong>Prompt de documentos en partes</strong> — del capítulo 2</li>
+    <li><strong>Tu prompt más frecuente</strong> — el que usas cada semana sin falta</li>
+  </ul>
+
+  <h3 style="font-family:var(--serif);font-size:20px;font-weight:700;color:var(--text);margin:24px 0 12px">Paso 3 — Reglas de higiene</h3>
+  <ul class="checklist">
+    <li><strong>Una conversación, un objetivo.</strong> No mezcles temas en el mismo chat.</li>
+    <li><strong>La tarea primero, el documento después.</strong> Siempre.</li>
+    <li><strong>Documentos grandes van en bloques.</strong> Avisa a Claude antes de empezar.</li>
+    <li><strong>Si un resultado es malo, el problema suele estar en el prompt.</strong> Antes de repetir, reescribe la instrucción.</li>
+    <li><strong>PRO de TokenSlayer si procesas PowerPoint o Excel.</strong> El conversor del navegador no puede con esos formatos — necesitas el servidor.</li>
+  </ul>
+
+  <div class="verdict">
+    <div class="verdict-label">✓ El resumen del resumen</div>
+    <p>Convierte antes de subir. Pon la tarea antes del documento. Sé específico en el prompt. Guarda los que funcionan. No uses el mismo chat para cosas distintas. Eso es todo. En serio.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PÁGINA FINAL — PICOS Y PALAS
+════════════════════════════════════════════════ -->
+<div class="final-page" id="final">
+  <div class="final-inner">
+
+    <div class="final-kicker">⚡ La oportunidad que casi nadie ve</div>
+
+    <h2>Mientras todos buscan el oro,<br><em>tú puedes vender los picos.</em></h2>
+
+    <p>En 1848, Samuel Brannan no buscó oro. Compró todas las palas, picos y tiendas de campaña de la zona y las revendió a los mineros con márgenes altísimos. <strong>Se convirtió en el primer millonario de California</strong> sin haber encontrado un solo grano de oro.</p>
+
+    <p>No fue el único. Levi Strauss vio que los mineros destrozaban los pantalones con el trabajo duro — y fabricó ropa resistente. John Studebaker construyó carretillas de madera ultrarresistentes para venderlas en las minas. Con ese dinero fundó después la compañía de automóviles Studebaker.</p>
+
+    <p>Ninguno de los tres buscó oro. Los tres se hicieron ricos vendiéndoles herramientas a los que sí lo buscaban.</p>
+
+    <div class="trio-grid">
+      <div class="trio-card">
+        <div class="trio-name">Samuel Brannan</div>
+        <div class="trio-what">Vendió herramientas</div>
+        <div class="trio-result">Primer millonario de California. <strong>Sin buscar oro.</strong></div>
+      </div>
+      <div class="trio-card">
+        <div class="trio-name">Levi Strauss</div>
+        <div class="trio-what">Vendió ropa resistente</div>
+        <div class="trio-result">Una marca que sigue valiendo miles de millones. <strong>Sin buscar oro.</strong></div>
+      </div>
+      <div class="trio-card">
+        <div class="trio-name">John Studebaker</div>
+        <div class="trio-what">Vendió carretillas</div>
+        <div class="trio-result">Fundó una empresa de automóviles. <strong>Sin buscar oro.</strong></div>
+      </div>
+    </div>
+
+    <p>Hoy hay una nueva fiebre del oro. Se llama inteligencia artificial. <strong>Todo el mundo quiere subirse al movimiento</strong> — crear la app revolucionaria, el SaaS que cambie el sector, el producto que lo pete en Product Hunt.</p>
+
+    <p>Y mientras todos compiten por ese oro, hay un mercado enorme que nadie está mirando.</p>
+
+    <div class="parallelo-box">
+      <div class="parallelo-grid">
+        <div class="parallelo-col">
+          <div class="para-label then">1848 · California</div>
+          <div class="para-item">Miles de personas buscando oro, compitiendo entre ellas</div>
+          <div class="para-item">Mineros con problemas concretos: ropa que se rompe, herramientas malas, tiendas que no aguantan</div>
+          <div class="para-item">Los que se enriquecieron: los que resolvieron esos problemas concretos</div>
+        </div>
+        <div class="para-vs">VS</div>
+        <div class="parallelo-col">
+          <div class="para-label now">2025 · La IA</div>
+          <div class="para-item">Miles de personas compitiendo para crear la próxima app de IA</div>
+          <div class="para-item"><strong>Negocios locales</strong> con problemas concretos: reseñas sin responder, presupuestos que tardan horas, emails repetitivos</div>
+          <div class="para-item">Los que se enriquecerán: los que resuelvan esos problemas concretos</div>
+        </div>
+      </div>
+    </div>
+
+    <p>El fontanero de tu ciudad sigue tardando 20 minutos en escribir un presupuesto por WhatsApp. El restaurante de la esquina tiene reseñas de Google sin responder desde hace tres semanas. La clínica manda los mismos emails copiados desde 2019.</p>
+
+    <p><strong>No necesitan la próxima app revolucionaria. Necesitan a alguien de confianza que les ayude a usar lo que ya existe.</strong></p>
+
+    <p>Tú acabas de aprender a hablar con la IA mejor que el 95% de la gente. Sabes optimizar el contexto, estructurar prompts, trabajar con documentos reales. Eso tiene valor. Y hay un mercado enorme justo a tu alrededor que todavía no sabe que te necesita.</p>
+
+    <p>Los que buscan oro compiten entre ellos. <em>Los que venden picos eligen a sus clientes.</em></p>
+
+    <div class="boxkit-cta">
+      <h3>AI Business Box Kit.<br><em>Las herramientas ya están hechas.</em></h3>
+      <p>9 apps con IA listas para usar en tu negocio o vender a tu entorno. <strong>Presupuestos por WhatsApp en 2 minutos. Reseñas de Google respondidas en 20 segundos.</strong> Para el fontanero, el restaurante, la clínica.</p>
+      <p>Con el plan Pro tienes el código, las landings para venderlas y la guía paso a paso de cómo cerrar la primera venta esta semana. <strong>Sin audiencia. Sin foros. Sin competir contra nadie.</strong></p>
+      <div class="cta-row">
+        <div class="price-tag">$9</div>
+        <a href="https://apps.iapacks.com" target="_blank" class="btn-cta">Ver el AI Business Box Kit →</a>
+        <span class="cta-note">pago único · o $67 con licencia de reventa</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FIRMA -->
+<div class="firma">
+  <p class="firma-text">"El contexto vale dinero. Ahora ya sabes no malgastarlo."</p>
+  <div class="firma-name">— Jota!</div>
+  <div class="firma-sub">tokenslayer.netlify.app · iapacks.com · apps.iapacks.com</div>
+</div>
+
+<script>
+// Progress bar + botón flotante
+window.addEventListener('scroll', () => {
+  const doc = document.documentElement;
+  const pct = (doc.scrollTop / (doc.scrollHeight - doc.clientHeight)) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+  // Mostrar botón flotante después de scrollear un poco
+  const btn = document.getElementById('floatDl');
+  if (doc.scrollTop > 300) {
+    btn.style.opacity = '1'; btn.style.pointerEvents = 'auto';
+  } else {
+    btn.style.opacity = '0'; btn.style.pointerEvents = 'none';
+  }
+});
+
+// Copy prompt
+function copyPrompt(btn) {
+  const box = btn.closest('.prompt-box');
+  const code = box.querySelector('code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ copiado';
+    btn.style.color = 'var(--green)';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+  });
+}
+
+// Descarga PDF — abre la versión imprimible en nueva pestaña con instrucción
+function downloadPDF() {
+  // Abre la misma página en modo print-friendly
+  const printWin = window.open('', '_blank');
+  printWin.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Cómo no quemar tokens como un idiota — by Jota!</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'DM Sans',sans-serif; font-size:13px; line-height:1.7; color:#111; background:#fff; padding:0; }
+  .page { max-width:680px; margin:0 auto; padding:48px 48px; }
+  h1,h2,h3 { font-family:'Playfair Display',Georgia,serif; letter-spacing:-0.02em; }
+  h1 { font-size:36px; font-weight:900; line-height:1.05; margin-bottom:20px; }
+  h1 em { color:#007a40; font-style:italic; }
+  h2 { font-size:22px; font-weight:700; margin:32px 0 12px; border-bottom:1px solid #e0e0e0; padding-bottom:6px; }
+  h3 { font-size:16px; font-weight:700; margin:20px 0 8px; }
+  p { margin-bottom:14px; color:#333; }
+  p strong { color:#111; }
+  code { font-family:'DM Mono',monospace; font-size:12px; background:#f0f0f0; padding:1px 5px; border-radius:3px; }
+  pre { font-family:'DM Mono',monospace; font-size:11.5px; background:#f5f7ff; border-left:3px solid #2060d0; padding:14px 16px; margin:16px 0; line-height:1.7; white-space:pre-wrap; border-radius:0 8px 8px 0; color:#1a3a8a; }
+  .callout { background:#f8f8f8; border-left:3px solid #007a40; padding:14px 16px; margin:16px 0; font-size:12.5px; border-radius:0 8px 8px 0; }
+  .callout.gold { border-color:#c07010; }
+  .callout.blue { border-color:#2060d0; }
+  .callout.red { border-color:#c03030; }
+  .verdict { background:#f0fff8; border:1px solid #b0e0c0; border-radius:8px; padding:16px 18px; margin:16px 0; }
+  .verdict-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:#007a40; margin-bottom:8px; }
+  .bad-good { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 0; }
+  .bg-card { border-radius:8px; padding:14px 16px; font-size:12px; }
+  .bg-card.bad { background:#fff5f5; border:1px solid #f0c0c0; }
+  .bg-card.good { background:#f0fff8; border:1px solid #b0e0c0; }
+  .bg-label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:6px; font-weight:700; }
+  .bg-card.bad .bg-label { color:#c03030; }
+  .bg-card.good .bg-label { color:#007a40; }
+  .data-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 0; }
+  .data-card { background:#f8f8f8; border:1px solid #e0e0e0; border-radius:8px; padding:14px 16px; }
+  .data-card .label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.08em; text-transform:uppercase; color:#888; margin-bottom:6px; }
+  .data-card .value { font-family:'Playfair Display',Georgia,serif; font-size:26px; font-weight:700; line-height:1; }
+  .data-card .value.red { color:#c03030; }
+  .data-card .value.green { color:#007a40; }
+  .data-card .sub { font-size:11px; color:#888; margin-top:3px; }
+  .checklist { list-style:none; margin:12px 0; }
+  .checklist li { display:flex; gap:10px; padding:8px 0; border-bottom:1px solid #f0f0f0; font-size:12.5px; }
+  .checklist li::before { content:'✓'; color:#007a40; font-weight:700; flex-shrink:0; }
+  .divider { height:1px; background:#e0e0e0; margin:24px 0; }
+  /* PORTADA */
+  .cover-pdf { text-align:center; padding:60px 0 48px; border-bottom:2px solid #007a40; margin-bottom:40px; }
+  .cover-pdf img { max-width:260px; margin:0 auto 28px; display:block; filter:drop-shadow(0 20px 40px rgba(0,0,0,0.2)); }
+  .cover-pdf h1 { font-size:32px; margin-bottom:12px; }
+  .cover-pdf .sub { font-size:14px; color:#555; margin-bottom:20px; }
+  .cover-pills { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .cover-pill { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.06em; color:#555; border:1px solid #ccc; border-radius:999px; padding:3px 10px; }
+  /* FINAL */
+  .trio-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0; }
+  .trio-card { background:#fffbf0; border:1px solid #e8c060; border-radius:8px; padding:14px; }
+  .trio-name { font-family:'Playfair Display',Georgia,serif; font-size:14px; font-weight:700; color:#a07010; margin-bottom:4px; }
+  .trio-what { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.06em; text-transform:uppercase; color:#888; margin-bottom:6px; }
+  .trio-result { font-size:12px; color:#555; line-height:1.5; }
+  .box-cta { background:#f0f4ff; border:1px solid #b0c0e8; border-radius:10px; padding:20px 22px; margin-top:24px; }
+  .box-cta h3 { font-size:18px; margin-bottom:10px; }
+  .box-cta h3 em { color:#2060d0; }
+  .box-cta p { font-size:12.5px; }
+  /* WATERMARK FOOTER */
+  .pdf-footer { margin-top:40px; padding-top:16px; border-top:1px solid #e0e0e0; display:flex; justify-content:space-between; align-items:center; }
+  .pdf-footer-brand { font-family:'Playfair Display',Georgia,serif; font-size:14px; font-weight:700; color:#007a40; }
+  .pdf-footer-url { font-family:'DM Mono',monospace; font-size:10px; color:#888; }
+  @media print { body { font-size:12px; } h2 { page-break-before:always; } h2:first-of-type { page-break-before:auto; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="cover-pdf">
+    <img src="https://Aka625.b-cdn.net/tokens%20slayers/portada%20ebook%20com%20no%20quemar%20tokens%20com%20un%20idiota.png" alt="Portada">
+    <h1>Cómo no quemar tokens<br><em>como un idiota</em></h1>
+    <p class="sub">Guía práctica para usar Claude mejor, gastar menos y evitar errores de contexto</p>
+    <div class="cover-pills">
+      <span class="cover-pill">7 capítulos</span>
+      <span class="cover-pill">Prompts incluidos</span>
+      <span class="cover-pill">Sin relleno</span>
+      <span class="cover-pill">Gratis · compártelo</span>
+    </div>
+    <p style="margin-top:20px;font-size:12px;color:#888">by Jota! · tokenslayer.netlify.app</p>
+  </div>
+
+  <h2>Cap 01 · El PDF que te costó el doble sin que lo supieras</h2>
+  <p>Hice el experimento. Cogí el mismo contrato de 40 páginas y lo subí a Claude de dos formas: primero en PDF tal cual, luego convertido a Markdown con TokenSlayer. Mismo documento, misma pregunta, mismos modelos.</p>
+  <p>Los resultados me cabrearon un poco, porque llevaba meses haciéndolo mal sin saberlo.</p>
+  <div class="data-row">
+    <div class="data-card"><div class="label">PDF sin convertir</div><div class="value red">~18.400</div><div class="sub">tokens consumidos</div></div>
+    <div class="data-card"><div class="label">Mismo doc en Markdown</div><div class="value green">~7.200</div><div class="sub">tokens consumidos</div></div>
+  </div>
+  <p>Eso es un <strong>61% menos</strong>. En un solo documento. Multiplícalo por todos los PDFs que procesas en un mes y ya tienes el número que no quieres ver.</p>
+  <p>Pero lo peor no son los tokens. Lo peor es que <strong>Claude entendió cosas distintas en cada versión.</strong> Con el PDF, se inventó dos fechas. Con el Markdown, las identificó todas correctas.</p>
+  <div class="callout"><strong>Por qué pasa esto:</strong> cuando Claude recibe un PDF, procesa la representación visual — capas de metadatos, coordenadas, codificación de fuentes. Como leer un libro a través de un cristal esmerilado. El Markdown es texto limpio con estructura semántica. Claude gasta todos sus tokens en entender el contenido, no en descifrar el formato.</div>
+  <div class="verdict"><div class="verdict-label">✓ El protocolo</div><p>Antes de subir cualquier documento a Claude: convierte primero. TokenSlayer, cualquier conversor. Nunca subas un PDF sin convertir si puedes evitarlo.</p></div>
+  <pre>Aquí el contenido de [nombre del documento]:
+
+[PEGA EL MARKDOWN AQUÍ]
+
+Necesito que [tu pregunta específica]. Cita la sección exacta del documento cuando uses información de él.</pre>
+
+  <div class="divider"></div>
+
+  <h2>Cap 02 · Por qué Claude "se olvida" a mitad de documento</h2>
+  <p>No está roto. No es un bug. Es la ventana de contexto. Claude tiene una memoria de trabajo limitada. Todo lo que "ve" en una conversación ocupa espacio en esa ventana. Cuando se llena, lo más antiguo empieza a pesar menos.</p>
+  <p>El problema real: <strong>la mayoría llena la ventana de basura antes de llegar a lo importante.</strong> Cada "hola", cada corrección larga, cada vez que pegas el mismo documento dos veces — todo ocupa contexto.</p>
+  <div class="verdict"><div class="verdict-label">✓ El protocolo</div><p><strong>Regla 1:</strong> Una conversación, un objetivo.<br><strong>Regla 2:</strong> El documento va primero, las preguntas después.<br><strong>Regla 3:</strong> Si el documento supera 4.000 palabras, divídelo en bloques y avisa cuando termines.</p></div>
+  <pre>Voy a enviarte un documento en [X] partes. No respondas hasta que yo diga "LISTO". Cuando lo diga, responde a esta pregunta: [tu pregunta].
+
+Parte 1 de [X]:
+[BLOQUE DEL DOCUMENTO]</pre>
+
+  <div class="divider"></div>
+
+  <h2>Cap 03 · El orden importa más que el contenido</h2>
+  <p>Claude lee como tú. Lo que aparece primero pesa más. El error más común: pegar 20 páginas y al final escribir la pregunta. Claude ha formado una opinión antes de llegar a tu instrucción.</p>
+  <div class="bad-good">
+    <div class="bg-card bad"><div class="bg-label">✕ Como lo hace casi todo el mundo</div><p>[20 páginas de documento]<br><br>¿Puedes analizarlo y decirme qué riesgos hay?</p></div>
+    <div class="bg-card good"><div class="bg-label">✓ Como funciona de verdad</div><p>Analiza el siguiente documento e identifica los 3 riesgos principales. Cita el párrafo exacto de cada uno.<br><br>[documento aquí]</p></div>
+  </div>
+  <div class="verdict"><div class="verdict-label">✓ El protocolo de 3 líneas</div><p><strong>Línea 1:</strong> La tarea exacta. <strong>Línea 2:</strong> El formato de salida. <strong>Línea 3:</strong> El documento. En ese orden. Siempre.</p></div>
+  <pre>Tarea: identifica todas las cláusulas que limiten mi responsabilidad como proveedor.
+Formato: lista numerada con cita literal y explicación de 2 líneas.
+Documento:
+
+[EL DOCUMENTO AQUÍ]</pre>
+
+  <div class="divider"></div>
+
+  <h2>Cap 04 · Prompts que no funcionan y por qué</h2>
+  <div class="bad-good"><div class="bg-card bad"><div class="bg-label">✕ "Resume este documento"</div><p>¿Cuántas palabras? ¿Para quién? Claude adivina.</p></div><div class="bg-card good"><div class="bg-label">✓ Versión que funciona</div><p>"Resume en 150 palabras los puntos clave para un director que no ha leído el documento."</p></div></div>
+  <div class="bad-good"><div class="bg-card bad"><div class="bg-label">✕ "Analiza esto"</div><p>El prompt más inútil que existe.</p></div><div class="bg-card good"><div class="bg-label">✓ Versión que funciona</div><p>"Analiza los riesgos legales para el proveedor. Semáforo rojo/amarillo/verde por nivel."</p></div></div>
+  <div class="bad-good"><div class="bg-card bad"><div class="bg-label">✕ "Mejora este texto"</div><p>Claude reescribe todo. Pierdes tu voz.</p></div><div class="bg-card good"><div class="bg-label">✓ Versión que funciona</div><p>"Corrige solo errores gramaticales sin cambiar el tono. Marca en negrita cada cambio."</p></div></div>
+  <div class="bad-good"><div class="bg-card bad"><div class="bg-label">✕ "¿Qué opinas?"</div><p>Demasiado vago para ser accionable.</p></div><div class="bg-card good"><div class="bg-label">✓ Versión que funciona</div><p>"Desde la perspectiva del proveedor, ¿qué 3 cláusulas cambiarías y por qué?"</p></div></div>
+  <div class="bad-good"><div class="bg-card bad"><div class="bg-label">✕ "Dame ideas"</div><p>Lista de 10 puntos que sirven para cualquier cosa del universo.</p></div><div class="bg-card good"><div class="bg-label">✓ Versión que funciona</div><p>"Dame 5 ideas para [contexto]. Para cada una: nombre, implementación en 2 semanas y métrica de éxito."</p></div></div>
+  <div class="verdict"><div class="verdict-label">✓ La regla universal</div><p>Todo prompt responde tres preguntas: <strong>¿qué quiero?</strong> (tarea), <strong>¿cómo lo quiero?</strong> (formato), <strong>¿para qué sirve?</strong> (contexto).</p></div>
+
+  <div class="divider"></div>
+
+  <h2>Cap 05 · El flujo que uso para documentos de trabajo reales</h2>
+  <p>Sin adornos. Cuatro tipos de documento, cuatro prompts que funcionan.</p>
+  <p><strong>Contratos:</strong></p>
+  <pre>Eres abogado. Analiza este contrato desde la perspectiva del proveedor.
+Identifica: cláusulas que me limitan, obligaciones no recíprocas, condiciones de resolución que me perjudican.
+Para cada punto: cita literal + explicación + riesgo (alto/medio/bajo).
+[CONTRATO EN MARKDOWN]</pre>
+  <p><strong>Informes:</strong></p>
+  <pre>Lee este informe y extrae únicamente:
+- Las 3 cifras más relevantes para tomar decisiones
+- Los 2 problemas que requieren acción inmediata
+- Una recomendación concreta para esta semana
+Máximo 200 palabras.
+[INFORME EN MARKDOWN]</pre>
+  <p><strong>Propuestas:</strong></p>
+  <pre>Analiza este material sobre el cliente y dime:
+1. Su problema principal (el que probablemente no está diciendo en voz alta)
+2. Qué lenguaje usa para describir sus retos
+3. Qué argumento le va a convencer más
+[MATERIAL DEL CLIENTE EN MARKDOWN]</pre>
+  <p><strong>Emails difíciles:</strong></p>
+  <pre>Contexto: [situación en 3 líneas]
+Objetivo: [qué quieres conseguir]
+Tono: [profesional/cercano/firme]
+Destinatario: [quién es y qué le importa]
+Redacta el email. Máximo 150 palabras. Sin relleno corporativo.</pre>
+
+  <div class="divider"></div>
+
+  <h2>Cap 06 · Cuándo NO usar Markdown</h2>
+  <div class="callout gold"><strong>Tablas complejas:</strong> celdas fusionadas, subtotales anidados. El Markdown puede romper la lógica. Usa CSV o describe la estructura verbalmente.</div>
+  <div class="callout gold"><strong>Imágenes con texto importante:</strong> el conversor no captura lo visual. Sube la imagen directamente a Claude (tiene visión).</div>
+  <div class="callout gold"><strong>Documentos donde el formato es legal:</strong> contratos firmados, certificados. Úsalo para análisis, no para el original.</div>
+  <div class="callout gold"><strong>Texto muy corto (menos de 500 palabras):</strong> el ahorro es mínimo. Copia y pega directamente.</div>
+  <div class="verdict"><div class="verdict-label">✓ La regla rápida</div><p>¿Más de 500 palabras y principalmente texto? Convierte. Lo demás, evalúa caso a caso.</p></div>
+
+  <div class="divider"></div>
+
+  <h2>Cap 07 · Tu setup de 10 minutos</h2>
+  <ul class="checklist">
+    <li><strong>TokenSlayer en un tab fijo.</strong> Sin fricción = sin excusas para saltarse el paso.</li>
+    <li><strong>Arrastra, convierte, copia.</strong> 10 segundos. Si tarda más, algo falla.</li>
+    <li><strong>Nunca copies el original</strong> cuando tengas el Markdown.</li>
+    <li><strong>Guarda tus 5 prompts más frecuentes</strong> en un doc. Ajusta plantillas, no improvises.</li>
+    <li><strong>Una conversación, un objetivo.</strong> No mezcles temas.</li>
+    <li><strong>La tarea primero, el documento después.</strong> Siempre.</li>
+    <li><strong>Si un resultado es malo, el problema está en el prompt.</strong> Reescribe antes de repetir.</li>
+  </ul>
+  <div class="verdict"><div class="verdict-label">✓ El resumen del resumen</div><p>Convierte antes de subir. Pon la tarea antes del documento. Sé específico. Guarda los prompts que funcionan. Una conversación, un objetivo.</p></div>
+
+  <div class="divider"></div>
+
+  <h2 style="page-break-before:always">⚡ Mientras todos buscan el oro, tú puedes vender los picos</h2>
+  <p>En 1848, Samuel Brannan no buscó oro. Compró todas las palas, picos y tiendas de campaña de la zona y las revendió a los mineros con márgenes altísimos. <strong>Se convirtió en el primer millonario de California</strong> sin haber encontrado un solo grano de oro.</p>
+  <p>No fue el único. Levi Strauss fabricó pantalones resistentes para los mineros. John Studebaker construyó carretillas de madera. Con ese dinero fundó después la compañía de automóviles Studebaker. Ninguno buscó oro. Los tres se hicieron ricos vendiéndoles herramientas a los que sí lo buscaban.</p>
+  <div class="trio-grid">
+    <div class="trio-card"><div class="trio-name">Samuel Brannan</div><div class="trio-what">Vendió herramientas</div><div class="trio-result">Primer millonario de California. Sin buscar oro.</div></div>
+    <div class="trio-card"><div class="trio-name">Levi Strauss</div><div class="trio-what">Vendió ropa resistente</div><div class="trio-result">Una marca que vale miles de millones. Sin buscar oro.</div></div>
+    <div class="trio-card"><div class="trio-name">John Studebaker</div><div class="trio-what">Vendió carretillas</div><div class="trio-result">Fundó una empresa de automóviles. Sin buscar oro.</div></div>
+  </div>
+  <p>Hoy hay una nueva fiebre del oro. Se llama inteligencia artificial. Todo el mundo quiere crear la app revolucionaria. Y mientras todos compiten por ese oro, hay un mercado enorme que nadie está mirando.</p>
+  <p>El fontanero sigue tardando 20 minutos en escribir un presupuesto por WhatsApp. El restaurante tiene reseñas sin responder desde hace semanas. La clínica manda los mismos emails copiados desde 2019. <strong>No necesitan la app revolucionaria. Necesitan a alguien de confianza que les ayude a usar lo que ya existe.</strong></p>
+  <p>Tú acabas de aprender a hablar con la IA mejor que el 95% de la gente. Eso tiene valor. Y hay un mercado enorme justo a tu alrededor que todavía no sabe que te necesita.</p>
+  <p><em>Los que buscan oro compiten entre ellos. Los que venden picos eligen a sus clientes.</em></p>
+  <div class="box-cta">
+    <h3>AI Business Box Kit — <em>Las herramientas ya están hechas.</em></h3>
+    <p>9 apps con IA listas para usar en tu negocio o vender a tu entorno. Presupuestos por WhatsApp en 2 minutos. Reseñas de Google en 20 segundos. Con el plan Pro tienes el código, las landings y la guía para cerrar la primera venta esta semana. <strong>apps.iapacks.com</strong></p>
+    <p style="margin-top:12px;font-size:11px;color:#888">Básico $9 · Pro $67 con licencia de reventa · pago único</p>
+  </div>
+
+  <div class="pdf-footer">
+    <div class="pdf-footer-brand">by Jota! — tokenslayer.netlify.app</div>
+    <div class="pdf-footer-url">apps.iapacks.com · Comparte este PDF libremente</div>
+  </div>
+
+</div>
+</body>
+</html>`);
+  printWin.document.close();
+  setTimeout(() => { printWin.print(); }, 800);
+}
+</script>
+</body>
+</html>
