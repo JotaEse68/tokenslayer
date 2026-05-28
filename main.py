@@ -28,8 +28,10 @@ SUPPORT_EMAIL          = "support@iapacks.com"
 
 # IDs de productos/precios del Box Kit en Stripe (pago único)
 # Stripe identifica los pagos por el price_id o por el payment_link
-BOX_BASIC_LINK  = os.environ.get("BOX_BASIC_LINK", "bJe8wOa3Uehn5p85LO2Ry0d")   # $9
-BOX_PRO_LINK    = os.environ.get("BOX_PRO_LINK",   "eVq28qcc28X34l4cac2Ry0e")   # $67
+BOX_BASIC_LINK   = os.environ.get("BOX_BASIC_LINK",   "bJe8wOa3Uehn5p85LO2Ry0d")   # $9
+BOX_PRO_LINK     = os.environ.get("BOX_PRO_LINK",     "eVq28qcc28X34l4cac2Ry0e")   # $67
+BOX_AGENCY_LINK  = os.environ.get("BOX_AGENCY_LINK",  "5kQ00i8ZQ4GN6tc0ru2Ry0j")   # $297
+BOX_SETUP_LINK   = os.environ.get("BOX_SETUP_LINK",   "cNi14mdg61uBdVE1vy2Ry0h")   # $697
 BOX_SITE_URL    = os.environ.get("BOX_SITE_URL",   "https://apps.iapacks.com")
 
 stripe.api_key = STRIPE_SECRET_KEY
@@ -110,12 +112,11 @@ def email_has_active_stripe_subscription(email: str) -> bool:
 def email_has_box_purchase(email: str) -> dict | None:
     """
     Busca en Stripe si el email tiene una compra del Box Kit (pago único).
-    Devuelve dict con 'plan' ('basic'|'pro') o None si no tiene.
+    Devuelve dict con 'plan' ('basic'|'pro'|'agency'|'setup') o None.
     """
     try:
         customers = stripe.Customer.list(email=email, limit=10)
         for customer in customers.auto_paging_iter():
-            # Buscar checkout sessions completadas
             sessions = stripe.checkout.Session.list(
                 customer=customer.id,
                 status="complete",
@@ -123,16 +124,25 @@ def email_has_box_purchase(email: str) -> dict | None:
             )
             for session in sessions.auto_paging_iter():
                 payment_link = session.get("payment_link", "")
-                # Identificar por payment_link ID
-                if BOX_PRO_LINK in str(payment_link):
+                pl = str(payment_link)
+                # Identificar por payment_link — orden de mayor a menor precio
+                if BOX_SETUP_LINK in pl:
+                    return {"plan": "setup", "email": email}
+                if BOX_AGENCY_LINK in pl:
+                    return {"plan": "agency", "email": email}
+                if BOX_PRO_LINK in pl:
                     return {"plan": "pro", "email": email}
-                if BOX_BASIC_LINK in str(payment_link):
+                if BOX_BASIC_LINK in pl:
                     return {"plan": "basic", "email": email}
-                # Fallback: buscar por amount (pro=$67=6700, basic=$9=900)
+                # Fallback por amount — orden descendente
                 amount = session.get("amount_total", 0)
-                if amount >= 6700:
+                if amount >= 69700:   # $697
+                    return {"plan": "setup", "email": email}
+                if amount >= 29700:   # $297
+                    return {"plan": "agency", "email": email}
+                if amount >= 6700:    # $67
                     return {"plan": "pro", "email": email}
-                if amount >= 900:
+                if amount >= 900:     # $9
                     return {"plan": "basic", "email": email}
         return None
     except Exception as e:
@@ -368,10 +378,15 @@ async def box_login(body: LoginRequest):
     # Guardamos el plan en la sesión
     sessions[session_token]["plan"] = purchase["plan"]
 
+    plan = purchase["plan"]
+    # agency y setup tienen el mismo acceso
+    access_plan = "agency" if plan in ("agency", "setup") else plan
+
     return {
         "session_token": session_token,
         "email": email,
-        "plan": purchase["plan"],
+        "plan": access_plan,
+        "original_plan": plan,
         "expires_in": 86400
     }
 
