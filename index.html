@@ -81,13 +81,22 @@ body::before{
 .plan-btn.pro-on{background:var(--amber-dark);color:var(--amber);border:0.5px solid var(--amber-mid)}
 
 /* TOKEN INPUT */
-.token-row{display:none;align-items:center;gap:8px;padding:12px 14px;background:var(--bg-2);border:0.5px solid var(--green-mid);border-radius:var(--radius-md);margin-bottom:1rem}
-.token-row.on{display:flex}
-.token-row i{font-size:16px;color:var(--green);flex-shrink:0}
-.token-row input{flex:1;font-family:var(--font-mono);font-size:12px;background:transparent;border:none;color:var(--cream);outline:none}
-.token-row input::placeholder{color:var(--cream-faint)}
-.token-verify{padding:5px 12px;font-family:var(--font-mono);font-size:10px;background:var(--green-dark);border:0.5px solid var(--green-mid);border-radius:99px;color:var(--green);cursor:pointer;white-space:nowrap;transition:all 0.15s}
-.token-verify:hover{background:var(--green-mid)}
+/* LOGIN PRO POR EMAIL */
+.login-box{display:none;flex-direction:column;gap:10px;padding:16px;background:var(--bg-2);border:0.5px solid #a855f740;border-radius:var(--radius-md);margin-bottom:1rem}
+.login-box.on{display:flex}
+.login-box label{font-family:var(--font-mono);font-size:10px;color:var(--cream-faint);text-transform:uppercase;letter-spacing:1px}
+.login-row{display:flex;gap:8px;align-items:center}
+.login-row input{flex:1;font-family:var(--font-mono);font-size:12px;background:var(--bg-1);border:0.5px solid #333;border-radius:var(--radius-sm);color:var(--cream);outline:none;padding:8px 12px}
+.login-row input:focus{border-color:#a855f7}
+.login-row input::placeholder{color:var(--cream-faint)}
+.btn-login{padding:8px 16px;font-family:var(--font-mono);font-size:11px;background:#a855f7;border:none;border-radius:99px;color:#fff;cursor:pointer;white-space:nowrap;transition:all 0.15s;font-weight:700}
+.btn-login:hover{background:#9333ea}
+.btn-login:disabled{opacity:0.5;cursor:not-allowed}
+.pro-active-bar{display:none;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:#a855f715;border:0.5px solid #a855f740;border-radius:var(--radius-md);margin-bottom:1rem}
+.pro-active-bar.on{display:flex}
+.pro-active-bar span{font-family:var(--font-mono);font-size:11px;color:#a855f7}
+.btn-logout{font-family:var(--font-mono);font-size:10px;background:transparent;border:0.5px solid #333;border-radius:99px;color:var(--cream-faint);cursor:pointer;padding:4px 10px;transition:all 0.15s}
+.btn-logout:hover{border-color:#666;color:var(--cream)}
 .token-status{font-family:var(--font-mono);font-size:11px;padding:6px 12px;border-radius:var(--radius-sm);margin-bottom:1rem;display:none}
 .token-status.ok{display:block;background:var(--green-dark);color:var(--green);border:0.5px solid var(--green-mid)}
 .token-status.err{display:block;background:#3d0000;color:var(--red);border:0.5px solid #660000}
@@ -406,10 +415,19 @@ footer{margin-top:1rem;padding-top:2rem;border-top:0.5px solid var(--cream-faint
       <span style="font-family:var(--font-mono);font-size:10px;color:var(--cream-faint)" id="planNote">PDF · Word · TXT · CSV · HTML</span>
     </div>
 
-    <div class="token-row" id="tokenRow">
-      <i class="ti ti-key"></i>
-      <input type="text" id="proTokenInput" placeholder="Pega aquí tu token PRO..."/>
-      <button class="token-verify" onclick="verifyToken()">verificar</button>
+    <!-- BARRA PRO ACTIVO -->
+    <div class="pro-active-bar" id="proActiveBar">
+      <span>★ PRO activo &middot; <span id="proEmail"></span></span>
+      <button class="btn-logout" onclick="doLogout()">cerrar sesión</button>
+    </div>
+
+    <!-- LOGIN BOX (solo visible en plan PRO sin sesión) -->
+    <div class="login-box" id="loginBox">
+      <label>Acceso PRO &mdash; entra con el email con que pagaste</label>
+      <div class="login-row">
+        <input type="email" id="loginEmail" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')doLogin()"/>
+        <button class="btn-login" id="btnLogin" onclick="doLogin()">Acceder</button>
+      </div>
     </div>
     <div class="token-status" id="tokenStatus"></div>
 
@@ -635,7 +653,7 @@ footer{margin-top:1rem;padding-top:2rem;border-top:0.5px solid var(--cream-faint
       Sin compromiso anual: <strong>$3,50/mes</strong> · mismas funciones PRO.
       <a href="#" onclick="goStripe('monthly');return false">Suscribirse mensual →</a>
     </div>
-    <p class="note">Recibirás tu token PRO por email en menos de 5 minutos tras el pago.</p>
+    <p class="note">Tras el pago, entra con tu email en el botón ★ PRO &mdash; acceso instantáneo, sin tokens ni contraseñas.</p>
   </section>
 
 
@@ -762,9 +780,30 @@ if(typeof pdfjsLib!=='undefined'){
 var TOK_PER_CONV = 2000; // tokens por conversación típica
 var savedTokGlobal = 0;
 var currentPlan = 'free';
-var proToken = localStorage.getItem('ts_pro_token') || '';
 var currentMarkdown = '', currentFileName = 'output';
 var calcOpen = false;
+
+// ── SESIÓN PRO ───────────────────────────────
+var proSession = localStorage.getItem('ts_session_token') || '';
+var proEmailSaved = localStorage.getItem('ts_pro_email') || '';
+
+function isProActive(){
+  return proSession !== '';
+}
+
+function saveSession(token, email){
+  proSession = token;
+  proEmailSaved = email;
+  localStorage.setItem('ts_session_token', token);
+  localStorage.setItem('ts_pro_email', email);
+}
+
+function clearSession(){
+  proSession = '';
+  proEmailSaved = '';
+  localStorage.removeItem('ts_session_token');
+  localStorage.removeItem('ts_pro_email');
+}
 
 /* STRIPE */
 function goStripe(plan){
@@ -777,29 +816,66 @@ function setPlan(plan){
   var isFree = plan === 'free';
   document.getElementById('btnFree').className = 'plan-btn' + (isFree ? ' on' : '');
   document.getElementById('btnPro').className  = 'plan-btn' + (isFree ? '' : ' pro-on');
-  document.getElementById('tokenRow').className = 'token-row' + (isFree ? '' : ' on');
   document.getElementById('freeDropzone').style.display = isFree ? 'block' : 'none';
   document.getElementById('proDropzone').className = 'pro-dropzone' + (isFree ? '' : ' on');
   document.getElementById('planNote').textContent = isFree
     ? 'PDF · Word · TXT · CSV · HTML'
-    : 'Todos los formatos · hasta 20 MB';
+    : 'Todos los formatos · hasta 50 MB';
   document.getElementById('upsellBox').classList.remove('on');
-  if(!isFree && proToken){
-    document.getElementById('proTokenInput').value = proToken;
-    showTokenStatus(true, '✓ Token PRO activo');
-  }
+  if(!isFree) renderProState();
 }
 
-/* TOKEN */
-function verifyToken(){
-  var t = document.getElementById('proTokenInput').value.trim();
-  if(!t){ showTokenStatus(false,'Introduce tu token PRO'); return; }
-  proToken = t; localStorage.setItem('ts_pro_token', t);
-  showTokenStatus(true, '✓ Token guardado — se verificará al convertir');
+/* RENDER ESTADO PRO */
+function renderProState(){
+  var active = isProActive();
+  document.getElementById('proActiveBar').className = 'pro-active-bar' + (active ? ' on' : '');
+  document.getElementById('loginBox').className      = 'login-box'      + (active ? '' : ' on');
+  if(active) document.getElementById('proEmail').textContent = proEmailSaved;
 }
+
+/* LOGIN */
+function doLogin(){
+  var email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  if(!email || !email.includes('@')){ showTokenStatus(false, 'Introduce un email válido'); return; }
+  var btn = document.getElementById('btnLogin');
+  btn.disabled = true; btn.textContent = 'Verificando...';
+  showTokenStatus(false, ''); document.getElementById('tokenStatus').style.display = 'none';
+  fetch(CONFIG.backendUrl + '/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({email: email})
+  })
+  .then(function(r){ return r.json().then(function(d){ return {ok: r.ok, data: d}; }); })
+  .then(function(res){
+    btn.disabled = false; btn.textContent = 'Acceder';
+    if(res.ok){
+      saveSession(res.data.session_token, res.data.email);
+      renderProState();
+      showTokenStatus(true, '✓ Acceso PRO activo — ya puedes convertir todos los formatos');
+    } else {
+      showTokenStatus(false, res.data.detail || 'No encontramos suscripción activa para este email');
+    }
+  })
+  .catch(function(){
+    btn.disabled = false; btn.textContent = 'Acceder';
+    showTokenStatus(false, 'Error de conexión. El servidor puede estar arrancando (30s). Inténtalo de nuevo.');
+  });
+}
+
+/* LOGOUT */
+function doLogout(){
+  clearSession();
+  renderProState();
+  document.getElementById('loginEmail').value = '';
+  showTokenStatus(false, ''); document.getElementById('tokenStatus').style.display = 'none';
+}
+
 function showTokenStatus(ok, msg){
   var el = document.getElementById('tokenStatus');
-  el.textContent = msg; el.className = 'token-status ' + (ok ? 'ok' : 'err');
+  if(!msg){ el.style.display = 'none'; return; }
+  el.textContent = msg;
+  el.className = 'token-status ' + (ok ? 'ok' : 'err');
+  el.style.display = '';
 }
 
 /* CALC TOGGLE */
@@ -861,22 +937,27 @@ function handleConvertFree(inp){
 /* CONVERSOR PRO */
 function handleConvertPro(inp){
   if(!inp.files||!inp.files[0]) return;
-  if(!proToken){ showTokenStatus(false,'Introduce y verifica tu token PRO primero'); document.getElementById('tokenRow').scrollIntoView({behavior:'smooth'}); return; }
+  if(!isProActive()){
+    showTokenStatus(false,'Introduce tu email PRO y pulsa Acceder primero');
+    document.getElementById('loginBox').scrollIntoView({behavior:'smooth'});
+    return;
+  }
   var f=inp.files[0]; currentFileName=f.name.replace(/\.[^.]+$/,'');
   document.getElementById('convertStatus').textContent='⟳ Enviando al servidor...';
   document.getElementById('convertStatus').classList.add('on');
   document.getElementById('outputBox').classList.remove('on');
   document.getElementById('impactPanel').classList.remove('on');
   var fd=new FormData(); fd.append('file',f);
-  fetch(CONFIG.backendUrl+'/convert',{method:'POST',headers:{'X-Pro-Token':proToken},body:fd})
+  fetch(CONFIG.backendUrl+'/convert',{method:'POST',headers:{'X-Session-Token':proSession},body:fd})
   .then(function(r){
-    if(r.status===401) throw new Error('Token inválido.');
-    if(r.status===413) throw new Error('Archivo demasiado grande (máx 20 MB).');
+    if(r.status===401){ clearSession(); renderProState(); throw new Error('Sesión expirada. Vuelve a entrar con tu email.'); }
+    if(r.status===403) throw new Error('Acceso PRO requerido. Verifica tu email.');
+    if(r.status===413) throw new Error('Archivo demasiado grande (máx 50 MB).');
     if(!r.ok) throw new Error('Error del servidor: '+r.status);
     return r.json();
   })
-  .then(function(d){ showOutput(d.markdown, d.stats.original_kb, d.stats.token_estimate); })
-  .catch(function(e){ document.getElementById('convertStatus').textContent='✗ '+e.message; });
+  .then(function(d){ showOutput(d.markdown, d.stats.original_size_kb, d.stats.markdown_tokens); })
+  .catch(function(e){ document.getElementById('convertStatus').textContent='✗ '+e.message; document.getElementById('convertStatus').classList.add('on'); });
 }
 
 /* SHOW OUTPUT + IMPACT */
@@ -1008,9 +1089,11 @@ function downloadMarkdown(){
   a.download=currentFileName+'.md'; a.click();
 }
 
-// Restaurar token
-if(proToken && document.getElementById('proTokenInput')){
-  document.getElementById('proTokenInput').value=proToken;
+// Restaurar sesión PRO si existe
+if(isProActive()){
+  // Si estamos en plan free al cargar, renderProState se llama al pulsar PRO
+  // Si el usuario recarga en plan PRO, restauramos el estado visual
+  renderProState();
 }
 </script>
 </body>
