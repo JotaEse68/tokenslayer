@@ -33,7 +33,7 @@ body::before{
   background-image:linear-gradient(var(--bg-2) 1px,transparent 1px),linear-gradient(90deg,var(--bg-2) 1px,transparent 1px);
   background-size:40px 40px;opacity:0.35;pointer-events:none;z-index:0;
 }
-.page{width:100%;max-width:620px;position:relative;z-index:1;animation:fadeUp 0.5s ease both}
+.page{width:100%;max-width:780px;position:relative;z-index:1;animation:fadeUp 0.5s ease both}
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 
 /* NAV */
@@ -257,11 +257,28 @@ footer{margin-top:1rem;padding-top:2rem;border-top:0.5px solid var(--cream-faint
 .footer-sign{font-family:var(--font-display);font-style:italic;font-size:12px;color:var(--cream-faint)}
 .footer-sign strong{font-style:normal;font-weight:500;color:var(--green-dim)}
 
-@media(max-width:520px){
+@media(max-width:600px){
+  .page{padding:0 1rem}
   .pricing-grid{grid-template-columns:1fr}
   .hero-impact{grid-template-columns:repeat(3,1fr)}
   .hi-card .hi-val{font-size:16px}
   .step{flex-direction:column;gap:8px}
+  /* ebook: columna única en móvil */
+  .ebook-card{flex-direction:column !important}
+  .ebook-cover{width:100% !important;max-width:180px;margin:0 auto}
+  .ebook-price-row{flex-direction:column;align-items:stretch}
+  .ebook-cta{text-align:center;justify-content:center}
+  /* textos más grandes en móvil */
+  body{font-size:15px}
+  .step-desc{font-size:14px}
+  .plan-card{padding:20px 16px}
+  /* hero */
+  .hero-title{font-size:clamp(38px,11vw,64px)}
+  /* plan toggle */
+  .plan-toggle{width:100%}
+  .plan-btn{flex:1;text-align:center}
+  /* output btns */
+  #outputBox .toolbar-btn{flex:1;justify-content:center}
 }
 
 /* ===== AFILIADOS ===== */
@@ -354,6 +371,27 @@ footer{margin-top:1rem;padding-top:2rem;border-top:0.5px solid var(--cream-faint
   color:var(--cream-faint);cursor:default;
 }
 .ebook-cta.soon:hover{background:transparent;border-color:var(--cream-faint)}
+
+/* ACORDEÓN CÓMO USARLO */
+.accordion-header{
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;padding:14px 16px;
+  background:var(--bg-2);border:0.5px solid var(--cream-faint);
+  border-radius:var(--radius-md);transition:border-color 0.15s;
+  user-select:none;
+}
+.accordion-header:hover{border-color:var(--green-mid)}
+.accordion-header.open{border-color:var(--green-mid);border-bottom-left-radius:0;border-bottom-right-radius:0}
+.accordion-title{font-family:var(--font-mono);font-size:12px;color:var(--cream);letter-spacing:0.05em}
+.accordion-icon{font-size:16px;color:var(--green);transition:transform 0.25s}
+.accordion-header.open .accordion-icon{transform:rotate(180deg)}
+.accordion-body{
+  display:none;
+  border:0.5px solid var(--green-mid);border-top:none;
+  border-bottom-left-radius:var(--radius-md);border-bottom-right-radius:var(--radius-md);
+  background:var(--bg-2);padding:16px;
+}
+.accordion-body.open{display:block}
 </style>
 </head>
 <body>
@@ -410,7 +448,7 @@ footer{margin-top:1rem;padding-top:2rem;border-top:0.5px solid var(--cream-faint
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
       <div class="plan-toggle">
         <button class="plan-btn on" id="btnFree" onclick="setPlan('free')">⚡ Free</button>
-        <button class="plan-btn" id="btnPro" onclick="setPlan('pro')">★ PRO</button>
+        <button class="plan-btn" id="btnPro" onclick="setPlan('pro')" style="position:relative">★ PRO<span style="position:absolute;top:-8px;right:-8px;background:#a855f7;color:#fff;font-size:8px;font-family:var(--font-mono);padding:2px 6px;border-radius:99px;letter-spacing:0.05em">NUEVO</span></button>
       </div>
       <span style="font-family:var(--font-mono);font-size:10px;color:var(--cream-faint)" id="planNote">PDF · Word · TXT · CSV · HTML</span>
     </div>
@@ -519,15 +557,13 @@ footer{margin-top:1rem;padding-top:2rem;border-top:0.5px solid var(--cream-faint
     </div>
 
     <!-- OUTPUT BOX -->
-    <div class="output-box" id="outputBox">
-      <div class="output-toolbar">
-        <span id="outputLabel">output.md</span>
-        <div class="toolbar-btns">
-          <button class="toolbar-btn" id="copyBtn" onclick="copyMarkdown()"><i class="ti ti-copy"></i>copiar</button>
-          <button class="toolbar-btn" onclick="downloadMarkdown()"><i class="ti ti-download"></i>descargar</button>
-        </div>
+    <div class="output-box" id="outputBox" style="background:transparent;border:none;overflow:visible">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.75rem;flex-wrap:wrap">
+        <span id="outputLabel" style="font-family:var(--font-mono);font-size:11px;color:var(--cream-faint);flex:1"></span>
+        <button class="toolbar-btn" id="copyBtn" onclick="copyMarkdown()" style="padding:8px 18px;font-size:12px"><i class="ti ti-copy"></i>copiar</button>
+        <button class="toolbar-btn" onclick="downloadMarkdown()" style="padding:8px 18px;font-size:12px;background:var(--green);color:var(--bg);border-color:var(--green)"><i class="ti ti-download"></i>descargar .md</button>
       </div>
-      <div class="output-content" id="outputContent"></div>
+      <div class="output-content" id="outputContent" style="display:none"></div>
     </div>
 
     <!-- CALCULADORA SECUNDARIA -->
@@ -569,39 +605,46 @@ footer{margin-top:1rem;padding-top:2rem;border-top:0.5px solid var(--cream-faint
       <span class="section-num">02</span>
       <h2 class="section-title">Cómo usarlo con Claude</h2>
     </div>
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">1</div>
-        <div class="step-body">
-          <div class="step-title">Convierte arriba y copia el Markdown</div>
-          <div class="step-desc">Sube tu archivo, espera 10 segundos, pulsa <code>copiar</code>. Markdown limpio en tu portapapeles. <em>No copies el original — copia el Markdown.</em></div>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <div class="step-body">
-          <div class="step-title">Pégalo en Claude con contexto</div>
-          <div class="step-desc">Empieza así: <code>Aquí el contenido de [nombre del doc]:</code><br>Pega el Markdown. Añade tu pregunta al final. Claude entiende la estructura sin adivinar el formato.</div>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <div class="step-body">
-          <div class="step-title">Documentos largos: en bloques</div>
-          <div class="step-desc">Si supera 4.000 palabras, parte en secciones. Dile: <code>Voy a enviarte el documento en partes. Espera hasta que diga "listo".</code></div>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">4</div>
-        <div class="step-body">
-          <div class="step-title">Pide lo que necesitas, sin rodeos</div>
-          <div class="step-desc"><code>Resume los puntos clave</code> · <code>Extrae todas las fechas</code> · <code>Identifica las cláusulas de riesgo</code>. Con Markdown limpio, Claude va directo al grano.</div>
-        </div>
-      </div>
+
+    <div class="accordion-header" id="accordionBtn" onclick="toggleAccordion()">
+      <span class="accordion-title">// 4 pasos para sacarle el máximo — clic para ver</span>
+      <i class="ti ti-chevron-down accordion-icon" id="accordionIcon"></i>
     </div>
-    <div class="tip-box">
-      <div class="tip-label">// consejo de Jota</div>
-      El Markdown no es magia — es higiene. Un documento caótico convertido a Markdown sigue siendo caótico. La diferencia es que Claude trabaja con él sin quemar el doble de tokens intentando descifrar el formato. Si tu doc es un desastre, aprovecha para reorganizarlo. O pídele a Claude que lo haga. Para eso le pagas.
+    <div class="accordion-body" id="accordionBody">
+      <div class="steps" style="margin-bottom:1rem">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Convierte arriba y copia el Markdown</div>
+            <div class="step-desc">Sube tu archivo, espera 10 segundos, pulsa <code>copiar</code>. Markdown limpio en tu portapapeles. <em>No copies el original — copia el Markdown.</em></div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Pégalo en Claude con contexto</div>
+            <div class="step-desc">Empieza así: <code>Aquí el contenido de [nombre del doc]:</code><br>Pega el Markdown. Añade tu pregunta al final. Claude entiende la estructura sin adivinar el formato.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Documentos largos: en bloques</div>
+            <div class="step-desc">Si supera 4.000 palabras, parte en secciones. Dile: <code>Voy a enviarte el documento en partes. Espera hasta que diga "listo".</code></div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Pide lo que necesitas, sin rodeos</div>
+            <div class="step-desc"><code>Resume los puntos clave</code> · <code>Extrae todas las fechas</code> · <code>Identifica las cláusulas de riesgo</code>. Con Markdown limpio, Claude va directo al grano.</div>
+          </div>
+        </div>
+      </div>
+      <div class="tip-box" style="margin-bottom:0">
+        <div class="tip-label">// consejo de Jota</div>
+        El Markdown no es magia — es higiene. Un documento caótico convertido a Markdown sigue siendo caótico. La diferencia es que Claude trabaja con él sin quemar el doble de tokens intentando descifrar el formato. Si tu doc es un desastre, aprovecha para reorganizarlo. O pídele a Claude que lo haga. Para eso le pagas.
+      </div>
     </div>
   </section>
 
@@ -778,6 +821,20 @@ if(typeof pdfjsLib!=='undefined'){
 }
 
 var TOK_PER_CONV = 2000; // tokens por conversación típica
+
+/* ACORDEÓN */
+function toggleAccordion(){
+  var btn  = document.getElementById('accordionBtn');
+  var body = document.getElementById('accordionBody');
+  var open = body.classList.contains('open');
+  if(open){
+    body.classList.remove('open');
+    btn.classList.remove('open');
+  } else {
+    body.classList.add('open');
+    btn.classList.add('open');
+  }
+}
 var savedTokGlobal = 0;
 var currentPlan = 'free';
 var currentMarkdown = '', currentFileName = 'output';

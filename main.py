@@ -167,8 +167,13 @@ def send_welcome_email(email: str, customer_name: str = "") -> bool:
       <p style="color:#4b5563;font-size:13px;margin:0 0 12px">
         Mientras tienes TokenSlayer PRO, hay otra herramienta que te interesa:
       </p>
+      <a href="https://apps.iapacks.com" style="display:block;margin-bottom:16px">
+        <img src="https://Aka625.b-cdn.net/tokens%20slayers/AI%20BUsiness%20box%20(4).png"
+             alt="AI Business Box Pro — Plug &amp; Sell"
+             style="width:100%;max-width:480px;border-radius:12px;display:block;margin:0 auto"/>
+      </a>
       <a href="https://apps.iapacks.com" style="display:inline-block;background:#a855f7;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700">
-        AI Business Box Kit →
+        AI Business Box Kit — $9 básico · $67 Pro →
       </a>
       <p style="color:#4b5563;font-size:12px;margin:12px 0 0">
         9 apps listas para usar o vender. Plug &amp; Sell.
