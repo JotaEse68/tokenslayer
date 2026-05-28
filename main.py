@@ -26,6 +26,12 @@ EMAIL_FROM             = os.environ.get("EMAIL_FROM", "TokenSlayer <noreply@jsan
 SITE_URL               = os.environ.get("SITE_URL", "https://tokenslayer.netlify.app")
 SUPPORT_EMAIL          = "support@iapacks.com"
 
+# IDs de productos/precios del Box Kit en Stripe (pago único)
+# Stripe identifica los pagos por el price_id o por el payment_link
+BOX_BASIC_LINK  = os.environ.get("BOX_BASIC_LINK", "bJe8wOa3Uehn5p85LO2Ry0d")   # $9
+BOX_PRO_LINK    = os.environ.get("BOX_PRO_LINK",   "eVq28qcc28X34l4cac2Ry0e")   # $67
+BOX_SITE_URL    = os.environ.get("BOX_SITE_URL",   "https://apps.iapacks.com")
+
 stripe.api_key = STRIPE_SECRET_KEY
 resend.api_key = RESEND_API_KEY
 
@@ -89,7 +95,7 @@ def validate_session(session_token: str | None) -> str | None:
 
 
 def email_has_active_stripe_subscription(email: str) -> bool:
-    """Busca en Stripe si el email tiene suscripción activa."""
+    """Busca en Stripe si el email tiene suscripción activa (TokenSlayer PRO)."""
     try:
         customers = stripe.Customer.list(email=email, limit=10)
         for customer in customers.auto_paging_iter():
@@ -99,6 +105,39 @@ def email_has_active_stripe_subscription(email: str) -> bool:
         return False
     except Exception:
         return False
+
+
+def email_has_box_purchase(email: str) -> dict | None:
+    """
+    Busca en Stripe si el email tiene una compra del Box Kit (pago único).
+    Devuelve dict con 'plan' ('basic'|'pro') o None si no tiene.
+    """
+    try:
+        customers = stripe.Customer.list(email=email, limit=10)
+        for customer in customers.auto_paging_iter():
+            # Buscar checkout sessions completadas
+            sessions = stripe.checkout.Session.list(
+                customer=customer.id,
+                status="complete",
+                limit=20
+            )
+            for session in sessions.auto_paging_iter():
+                payment_link = session.get("payment_link", "")
+                # Identificar por payment_link ID
+                if BOX_PRO_LINK in str(payment_link):
+                    return {"plan": "pro", "email": email}
+                if BOX_BASIC_LINK in str(payment_link):
+                    return {"plan": "basic", "email": email}
+                # Fallback: buscar por amount (pro=$67=6700, basic=$9=900)
+                amount = session.get("amount_total", 0)
+                if amount >= 6700:
+                    return {"plan": "pro", "email": email}
+                if amount >= 900:
+                    return {"plan": "basic", "email": email}
+        return None
+    except Exception as e:
+        print(f"Error buscando compra Box Kit: {e}")
+        return None
 
 
 def send_welcome_email(email: str, customer_name: str = "") -> bool:
@@ -309,6 +348,42 @@ async def convert(
         except Exception:
             pass
         raise HTTPException(status_code=500, detail=f"Error al convertir el archivo: {str(e)}")
+
+
+# ── LOGIN BOX KIT (pago único) ───────────────
+@app.post("/box/login")
+async def box_login(body: LoginRequest):
+    email = body.email.strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Email inválido.")
+
+    purchase = email_has_box_purchase(email)
+    if not purchase:
+        raise HTTPException(
+            status_code=403,
+            detail="No encontramos ninguna compra del AI Business Box Kit para este email. ¿Usaste otro email al pagar?"
+        )
+
+    session_token = create_session(email)
+    # Guardamos el plan en la sesión
+    sessions[session_token]["plan"] = purchase["plan"]
+
+    return {
+        "session_token": session_token,
+        "email": email,
+        "plan": purchase["plan"],
+        "expires_in": 86400
+    }
+
+
+# ── VERIFICAR sesión Box Kit ──────────────────
+@app.get("/box/session")
+async def box_check_session(x_session_token: str | None = Header(default=None)):
+    email = validate_session(x_session_token)
+    if not email:
+        raise HTTPException(status_code=401, detail="Sesión inválida o expirada.")
+    plan = sessions.get(x_session_token, {}).get("plan", "basic")
+    return {"valid": True, "email": email, "plan": plan}
 
 
 # ── STRIPE WEBHOOK ───────────────────────────
