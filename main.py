@@ -109,6 +109,12 @@ def email_has_active_stripe_subscription(email: str) -> bool:
         return False
 
 
+# Emails de administrador — acceso directo sin verificar Stripe
+ADMIN_EMAILS = {
+    "jsantospro3@gmail.com": "setup",
+    "support@iapacks.com":   "setup",
+}
+
 def email_has_box_purchase(email: str) -> dict | None:
     """
     Busca en Stripe si el email tiene una compra del Box Kit (pago único).
@@ -367,7 +373,11 @@ async def box_login(body: LoginRequest):
     if not email or "@" not in email:
         raise HTTPException(status_code=400, detail="Email inválido.")
 
-    purchase = email_has_box_purchase(email)
+    # Admin bypass — acceso directo sin verificar Stripe
+    if email in ADMIN_EMAILS:
+        purchase = {"plan": ADMIN_EMAILS[email], "email": email}
+    else:
+        purchase = email_has_box_purchase(email)
     if not purchase:
         raise HTTPException(
             status_code=403,
