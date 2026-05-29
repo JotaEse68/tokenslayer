@@ -548,8 +548,19 @@ async def stripe_webhook(request: Request):
         # También buscar en metadata y en el amount como fallback
         amount = session.get("amount_total", 0) or 0
 
+        # Intentar obtener el nombre del producto desde line_items
+        product_name = ""
+        try:
+            session_id = session.get("id", "")
+            if session_id:
+                line_items = stripe.checkout.Session.list_line_items(session_id, limit=1)
+                if line_items and line_items.data:
+                    product_name = str(line_items.data[0].get("description", "") or "").lower()
+        except Exception:
+            pass
+
         if email:
-            # Identificar si es Box Kit por payment_link
+            # Identificar por payment_link primero
             if BOX_SETUP_LINK in payment_link:
                 send_box_welcome_email(email, "setup", name)
                 print(f"✓ Email Box Kit Setup enviado a {email}")
@@ -574,6 +585,15 @@ async def stripe_webhook(request: Request):
             elif amount >= 900:
                 send_box_welcome_email(email, "basic", name)
                 print(f"✓ Email Box Kit Básico (por amount) enviado a {email}")
+            elif "agency" in product_name or "setup" in product_name:
+                send_box_welcome_email(email, "agency", name)
+                print(f"✓ Email Box Kit Agency (por nombre) enviado a {email}")
+            elif "pro" in product_name and "box" in product_name:
+                send_box_welcome_email(email, "pro", name)
+                print(f"✓ Email Box Kit Pro (por nombre) enviado a {email}")
+            elif "básico" in product_name or "basico" in product_name:
+                send_box_welcome_email(email, "basic", name)
+                print(f"✓ Email Box Kit Básico (por nombre) enviado a {email}")
             else:
                 # TokenSlayer u otro producto
                 send_welcome_email(email, name)
