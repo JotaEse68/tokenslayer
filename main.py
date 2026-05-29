@@ -256,6 +256,93 @@ def send_welcome_email(email: str, customer_name: str = "") -> bool:
 # ─────────────────────────────────────────────
 
 @app.get("/")
+def send_box_welcome_email(email: str, plan: str, customer_name: str = "") -> bool:
+    """Envía email de bienvenida del AI Business Box Kit según el plan."""
+    try:
+        name_display = customer_name if customer_name else "crack"
+
+        # Configuración por plan
+        plans = {
+            "basic":  {"label": "Básico", "color": "#2060d0", "price": "$9",   "url": f"{BOX_SITE_URL}/acceso/",        "emoji": "📦"},
+            "pro":    {"label": "Pro",    "color": "#00c896", "price": "$67",  "url": f"{BOX_SITE_URL}/acceso-pro/",    "emoji": "⚡"},
+            "agency": {"label": "Agency", "color": "#f0a020", "price": "$297", "url": f"{BOX_SITE_URL}/acceso-agency/", "emoji": "🚀"},
+            "setup":  {"label": "Agency + Setup", "color": "#f0a020", "price": "$697", "url": f"{BOX_SITE_URL}/acceso-agency/", "emoji": "🚀"},
+        }
+        p = plans.get(plan, plans["basic"])
+
+        resend.Emails.send({{
+            "from": EMAIL_FROM,
+            "to": [email],
+            "reply_to": SUPPORT_EMAIL,
+            "subject": f"⚡ Tu acceso al AI Business Box Kit · Plan {{p['label']}} — ya está listo",
+            "html": f"""
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#07080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <div style="max-width:600px;margin:0 auto;padding:40px 20px">
+
+    <div style="text-align:center;margin-bottom:36px">
+      <img src="https://Aka625.b-cdn.net/logos%20plugin/Screenshot_3.jpg"
+           alt="AI Business Box Kit · by Jota!"
+           style="height:56px;border-radius:8px"/>
+    </div>
+
+    <div style="background:#0b0d1a;border:1px solid rgba(240,160,32,0.25);border-radius:16px;padding:32px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,{p['color']},transparent)"></div>
+
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="display:inline-block;background:{p['color']}20;border:1px solid {p['color']}50;border-radius:50px;padding:8px 24px">
+          <span style="color:{p['color']};font-weight:800;font-size:14px">{p['emoji']} PLAN {{p['label'].upper()}} ACTIVO</span>
+        </div>
+      </div>
+
+      <h1 style="color:#eeeef5;font-size:24px;font-weight:800;margin:0 0 12px;text-align:center">
+        Hola{{', ' + customer_name if customer_name else ''}} — tu panel está listo.
+      </h1>
+
+      <p style="color:#9ca3af;line-height:1.7;margin:0 0 28px;text-align:center">
+        Tienes acceso inmediato al <strong style="color:#eeeef5">AI Business Box Kit · Plan {{p['label']}}</strong>.
+        Sin contraseñas. Solo tu email.
+      </p>
+
+      <div style="background:#07080f;border:1px solid #1f2030;border-radius:12px;padding:20px;margin-bottom:24px">
+        <p style="color:#6b7280;font-size:12px;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px">Cómo acceder</p>
+        <ol style="color:#e5e7eb;margin:0;padding-left:20px;line-height:2.2;font-size:14px">
+          <li>Ve a <a href="{p['url']}" style="color:{p['color']};font-weight:700">{p['url']}</a></li>
+          <li>Introduce este email: <strong style="color:{p['color']}">{email}</strong></li>
+          <li>Clic en <strong style="color:#eeeef5">Acceder</strong> — listo</li>
+        </ol>
+      </div>
+
+      <div style="text-align:center;margin-bottom:24px">
+        <a href="{p['url']}"
+           style="display:inline-block;padding:14px 36px;border-radius:50px;background:{p['color']};color:#07080f;font-weight:800;font-size:14px;text-decoration:none;letter-spacing:0.5px">
+          {p['emoji']} Acceder a mi panel →
+        </a>
+      </div>
+
+      <p style="color:#4b5563;font-size:13px;margin:0;text-align:center">
+        ¿Problemas? Responde a este email — te llega directo a soporte.<br>
+        <span style="color:{p['color']}">support@iapacks.com</span>
+      </p>
+    </div>
+
+    <div style="text-align:center;margin-top:28px">
+      <p style="color:#374151;font-size:12px;margin:0">
+        AI Business Box Kit · <em>Plug &amp; Sell</em> · by Jota! · iapacks.com
+      </p>
+    </div>
+  </div>
+</body>
+</html>"""
+        }})
+        return True
+    except Exception as e:
+        print(f"Error email Box Kit: {{e}}")
+        return False
+
+
 def root():
     return {"status": "ok", "service": "TokenSlayer API", "version": "2.0.0"}
 
@@ -433,7 +520,9 @@ async def stripe_webhook(request: Request):
         try:
             customer = stripe.Customer.retrieve(customer_id)
             email    = customer.get("email", "")
-            name     = customer.get("name", "")
+            raw_name = customer.get("name", "") or ""
+            name_parts = raw_name.strip().split()
+            name     = name_parts[0].capitalize() if name_parts else ""
 
             if email:
                 send_welcome_email(email, name)
@@ -441,15 +530,33 @@ async def stripe_webhook(request: Request):
         except Exception as e:
             print(f"Error procesando webhook: {e}")
 
-    # Pago puntual (por si usas payment_intent en lugar de subscription)
+    # Pago puntual — distinguir TokenSlayer vs Box Kit
     elif event["type"] == "checkout.session.completed":
-        session     = event["data"]["object"]
-        email       = session.get("customer_details", {}).get("email", "")
-        name        = session.get("customer_details", {}).get("name", "")
-        customer_id = session.get("customer")
+        session      = event["data"]["object"]
+        email        = session.get("customer_details", {}).get("email", "")
+        raw_name     = session.get("customer_details", {}).get("name", "") or ""
+        # Limpiar nombre — coger solo el primer token si parece basura
+        name_parts   = raw_name.strip().split()
+        name         = name_parts[0].capitalize() if name_parts else ""
+        payment_link = str(session.get("payment_link", "") or "")
 
         if email:
-            send_welcome_email(email, name)
-            print(f"✓ Email bienvenida (checkout) enviado a {email}")
+            # Identificar si es Box Kit por payment_link
+            if BOX_SETUP_LINK in payment_link:
+                send_box_welcome_email(email, "setup", name)
+                print(f"✓ Email Box Kit Setup enviado a {email}")
+            elif BOX_AGENCY_LINK in payment_link:
+                send_box_welcome_email(email, "agency", name)
+                print(f"✓ Email Box Kit Agency enviado a {email}")
+            elif BOX_PRO_LINK in payment_link:
+                send_box_welcome_email(email, "pro", name)
+                print(f"✓ Email Box Kit Pro enviado a {email}")
+            elif BOX_BASIC_LINK in payment_link:
+                send_box_welcome_email(email, "basic", name)
+                print(f"✓ Email Box Kit Básico enviado a {email}")
+            else:
+                # TokenSlayer u otro producto
+                send_welcome_email(email, name)
+                print(f"✓ Email TokenSlayer enviado a {email}")
 
     return {"received": True}
