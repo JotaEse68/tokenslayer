@@ -118,10 +118,24 @@ ADMIN_EMAILS = {
 
 def email_has_box_purchase(email: str) -> dict | None:
     """
-    Busca en Stripe si el email tiene una compra del Box Kit (pago único).
+    Busca en Stripe si el email tiene una compra del Box Kit.
+    Busca tanto en Customers como en checkout sessions de invitados.
     Devuelve dict con 'plan' ('basic'|'pro'|'agency'|'setup') o None.
     """
+    def identify_plan(pl: str, amount: int) -> str | None:
+        pl = str(pl)
+        if BOX_SETUP_LINK  in pl: return "setup"
+        if BOX_AGENCY_LINK in pl: return "agency"
+        if BOX_PRO_LINK    in pl: return "pro"
+        if BOX_BASIC_LINK  in pl: return "basic"
+        if amount >= 69700: return "setup"
+        if amount >= 29700: return "agency"
+        if amount >= 6700:  return "pro"
+        if amount >= 900:   return "basic"
+        return None
+
     try:
+        # 1. Buscar por Customer (compradores registrados)
         customers = stripe.Customer.list(email=email, limit=10)
         for customer in customers.auto_paging_iter():
             sessions = stripe.checkout.Session.list(
@@ -130,27 +144,28 @@ def email_has_box_purchase(email: str) -> dict | None:
                 limit=20
             )
             for session in sessions.auto_paging_iter():
-                payment_link = session.get("payment_link", "")
-                pl = str(payment_link)
-                # Identificar por payment_link — orden de mayor a menor precio
-                if BOX_SETUP_LINK in pl:
-                    return {"plan": "setup", "email": email}
-                if BOX_AGENCY_LINK in pl:
-                    return {"plan": "agency", "email": email}
-                if BOX_PRO_LINK in pl:
-                    return {"plan": "pro", "email": email}
-                if BOX_BASIC_LINK in pl:
-                    return {"plan": "basic", "email": email}
-                # Fallback por amount — orden descendente
-                amount = session.get("amount_total", 0)
-                if amount >= 69700:   # $697
-                    return {"plan": "setup", "email": email}
-                if amount >= 29700:   # $297
-                    return {"plan": "agency", "email": email}
-                if amount >= 6700:    # $67
-                    return {"plan": "pro", "email": email}
-                if amount >= 900:     # $9
-                    return {"plan": "basic", "email": email}
+                pl     = str(session.get("payment_link", "") or "")
+                amount = session.get("amount_total", 0) or 0
+                plan   = identify_plan(pl, amount)
+                if plan:
+                    return {"plan": plan, "email": email}
+
+        # 2. Buscar en checkout sessions por email (invitados / guest checkout)
+        guest_sessions = stripe.checkout.Session.list(
+            status="complete",
+            limit=100
+        )
+        for session in guest_sessions.auto_paging_iter():
+            customer_email = (
+                session.get("customer_details", {}) or {}
+            ).get("email", "") or ""
+            if customer_email.lower() == email.lower():
+                pl     = str(session.get("payment_link", "") or "")
+                amount = session.get("amount_total", 0) or 0
+                plan   = identify_plan(pl, amount)
+                if plan:
+                    return {"plan": plan, "email": email}
+
         return None
     except Exception as e:
         print(f"Error buscando compra Box Kit: {e}")
