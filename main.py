@@ -9,11 +9,28 @@ import tempfile
 import stripe
 import resend
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Request, Header
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request, Header, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from markitdown import MarkItDown
+from collections import defaultdict
+import threading
+
+# ── RATE LIMITING ──────────────────────────────────────────────────────────────
+_rate_lock    = threading.Lock()
+_ip_attempts: dict = defaultdict(list)
+RATE_MAX      = 5    # intentos por ventana
+RATE_WINDOW   = 600  # segundos (10 min)
+
+def check_rate_limit(ip: str) -> bool:
+    now = time.time()
+    with _rate_lock:
+        _ip_attempts[ip] = [t for t in _ip_attempts[ip] if now - t < RATE_WINDOW]
+        if len(_ip_attempts[ip]) >= RATE_MAX:
+            return False
+        _ip_attempts[ip].append(now)
+        return True
 
 # ─────────────────────────────────────────────
 #  CONFIG
@@ -389,7 +406,10 @@ class LoginRequest(BaseModel):
 
 
 @app.post("/login")
-async def login(body: LoginRequest):
+async def login(request: Request, body: LoginRequest):
+    client_ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(client_ip):
+        raise HTTPException(status_code=429, detail="Demasiados intentos. Espera 10 minutos.")
     email = body.email.strip().lower()
     if not email or "@" not in email:
         raise HTTPException(status_code=400, detail="Email inválido.")
@@ -487,7 +507,10 @@ async def convert(
 
 # ── LOGIN BOX KIT (pago único) ───────────────
 @app.post("/box/login")
-async def box_login(body: LoginRequest):
+async def box_login(request: Request, body: LoginRequest):
+    client_ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(client_ip):
+        raise HTTPException(status_code=429, detail="Demasiados intentos. Espera 10 minutos.")
     email = body.email.strip().lower()
     if not email or "@" not in email:
         raise HTTPException(status_code=400, detail="Email inválido.")
