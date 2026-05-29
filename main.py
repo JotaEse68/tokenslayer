@@ -151,20 +151,31 @@ def email_has_box_purchase(email: str) -> dict | None:
                     return {"plan": plan, "email": email}
 
         # 2. Buscar en checkout sessions por email (invitados / guest checkout)
-        guest_sessions = stripe.checkout.Session.list(
-            status="complete",
-            limit=100
-        )
-        for session in guest_sessions.auto_paging_iter():
-            customer_email = (
-                session.get("customer_details", {}) or {}
-            ).get("email", "") or ""
-            if customer_email.lower() == email.lower():
-                pl     = str(session.get("payment_link", "") or "")
-                amount = session.get("amount_total", 0) or 0
-                plan   = identify_plan(pl, amount)
-                if plan:
-                    return {"plan": plan, "email": email}
+        # Iterar todas las sessions completadas buscando el email
+        starting_after = None
+        found = False
+        while not found:
+            kwargs = {"status": "complete", "limit": 100}
+            if starting_after:
+                kwargs["starting_after"] = starting_after
+            batch = stripe.checkout.Session.list(**kwargs)
+            if not batch.data:
+                break
+            for session in batch.data:
+                cd = session.get("customer_details") or {}
+                customer_email = cd.get("email", "") or ""
+                print(f"  Checking session {session.get('id','')} → {customer_email}")
+                if customer_email.lower() == email.lower():
+                    pl     = str(session.get("payment_link", "") or "")
+                    amount = session.get("amount_total", 0) or 0
+                    plan   = identify_plan(pl, amount)
+                    if plan:
+                        print(f"✓ Guest encontrado: {email} → {plan}")
+                        return {"plan": plan, "email": email}
+            if batch.has_more:
+                starting_after = batch.data[-1].id
+            else:
+                break
 
         return None
     except Exception as e:
