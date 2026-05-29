@@ -538,7 +538,15 @@ async def stripe_webhook(request: Request):
         # Limpiar nombre — coger solo el primer token si parece basura
         name_parts   = raw_name.strip().split()
         name         = name_parts[0].capitalize() if name_parts else ""
-        payment_link = str(session.get("payment_link", "") or "")
+        # payment_link puede ser string ID o dict con 'id'
+        pl_raw = session.get("payment_link", "") or ""
+        if isinstance(pl_raw, dict):
+            payment_link = str(pl_raw.get("id", ""))
+        else:
+            payment_link = str(pl_raw)
+
+        # También buscar en metadata y en el amount como fallback
+        amount = session.get("amount_total", 0) or 0
 
         if email:
             # Identificar si es Box Kit por payment_link
@@ -554,6 +562,18 @@ async def stripe_webhook(request: Request):
             elif BOX_BASIC_LINK in payment_link:
                 send_box_welcome_email(email, "basic", name)
                 print(f"✓ Email Box Kit Básico enviado a {email}")
+            elif amount >= 69700:
+                send_box_welcome_email(email, "setup", name)
+                print(f"✓ Email Box Kit Setup (por amount) enviado a {email}")
+            elif amount >= 29700:
+                send_box_welcome_email(email, "agency", name)
+                print(f"✓ Email Box Kit Agency (por amount) enviado a {email}")
+            elif amount >= 6700:
+                send_box_welcome_email(email, "pro", name)
+                print(f"✓ Email Box Kit Pro (por amount) enviado a {email}")
+            elif amount >= 900:
+                send_box_welcome_email(email, "basic", name)
+                print(f"✓ Email Box Kit Básico (por amount) enviado a {email}")
             else:
                 # TokenSlayer u otro producto
                 send_welcome_email(email, name)
