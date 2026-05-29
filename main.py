@@ -122,16 +122,32 @@ def email_has_box_purchase(email: str) -> dict | None:
     Busca tanto en Customers como en checkout sessions de invitados.
     Devuelve dict con 'plan' ('basic'|'pro'|'agency'|'setup') o None.
     """
-    def identify_plan(pl: str, amount: int) -> str | None:
+    def identify_plan(pl: str, amount: int, session_id: str = "") -> str | None:
         pl = str(pl)
+        # 1. Por payment_link — más fiable
         if BOX_SETUP_LINK  in pl: return "setup"
         if BOX_AGENCY_LINK in pl: return "agency"
         if BOX_PRO_LINK    in pl: return "pro"
         if BOX_BASIC_LINK  in pl: return "basic"
+        # 2. Por amount real (sin cupón)
         if amount >= 69700: return "setup"
         if amount >= 29700: return "agency"
         if amount >= 6700:  return "pro"
         if amount >= 900:   return "basic"
+        # 3. Por nombre del producto en line_items (funciona con cualquier cupón)
+        if session_id:
+            try:
+                items = stripe.checkout.Session.list_line_items(session_id, limit=1)
+                if items and items.data:
+                    desc = str(items.data[0].get("description", "") or "").lower()
+                    if "setup" in desc: return "setup"
+                    if "agency" in desc: return "agency"
+                    if "pro" in desc and "box" in desc: return "pro"
+                    if "básico" in desc or "basico" in desc or "basic" in desc: return "basic"
+                    # Si tiene cualquier línea del Box Kit, es al menos basic
+                    if "business box" in desc or "iapacks" in desc: return "basic"
+            except Exception as ex:
+                print(f"Error line_items {session_id}: {ex}")
         return None
 
     try:
@@ -146,7 +162,7 @@ def email_has_box_purchase(email: str) -> dict | None:
             for session in sessions.auto_paging_iter():
                 pl     = str(session.get("payment_link", "") or "")
                 amount = session.get("amount_total", 0) or 0
-                plan   = identify_plan(pl, amount)
+                plan   = identify_plan(pl, amount, session.get("id",""))
                 if plan:
                     return {"plan": plan, "email": email}
 
@@ -168,7 +184,8 @@ def email_has_box_purchase(email: str) -> dict | None:
                 if customer_email.lower() == email.lower():
                     pl     = str(session.get("payment_link", "") or "")
                     amount = session.get("amount_total", 0) or 0
-                    plan   = identify_plan(pl, amount)
+                    sid    = session.get("id", "")
+                    plan   = identify_plan(pl, amount, sid)
                     if plan:
                         print(f"✓ Guest encontrado: {email} → {plan}")
                         return {"plan": plan, "email": email}
