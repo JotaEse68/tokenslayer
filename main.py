@@ -111,8 +111,9 @@ def email_has_active_stripe_subscription(email: str) -> bool:
 
 # Emails de administrador — acceso directo sin verificar Stripe
 ADMIN_EMAILS = {
-    "jsantospro3@gmail.com": "setup",
-    "support@iapacks.com":   "setup",
+    "jsantospro3@gmail.com":    "setup",
+    "support@iapacks.com":      "setup",
+    "desireedanchau@gmail.com": "agency",  # test temporal - borrar después
 }
 
 def email_has_box_purchase(email: str) -> dict | None:
