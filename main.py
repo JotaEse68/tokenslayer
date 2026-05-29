@@ -260,7 +260,7 @@ def root():
     return {"status": "ok", "service": "TokenSlayer API", "version": "2.0.0"}
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health():
     return {"status": "healthy", "timestamp": time.time()}
 
